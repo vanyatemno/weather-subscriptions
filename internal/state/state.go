@@ -151,6 +151,7 @@ func (s *State) GetCity(name string) (*models.City, error) {
 	return city, nil
 }
 
+// todo: remove
 func (s *State) GetCityByID(id string) (*models.City, error) {
 	city, ok := s.cityIDMap[id]
 	if !ok {

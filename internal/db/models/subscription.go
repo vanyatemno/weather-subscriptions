@@ -10,8 +10,8 @@ type Subscription struct {
 type SubscriptionType string
 
 const (
-	DAILY  SubscriptionType = "DAILY"
-	HOURLY SubscriptionType = "HOURLY"
+	DAILY  SubscriptionType = "daily"
+	HOURLY SubscriptionType = "hourly"
 )
 
 type TokenType string

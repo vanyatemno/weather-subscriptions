@@ -16,7 +16,7 @@ import (
 const emailValidationCodeLength = 6
 
 type SubManager interface {
-	SendConfirmationEmail(ctx context.Context, request SubscribeRequest) error
+	InviteUser(ctx context.Context, request SubscribeRequest) error
 	Subscribe(token string) error
 	Unsubscribe(token string) error
 }
@@ -41,9 +41,9 @@ func New(state state.Stateful, mailer mailer2.MailerService, integration integra
 	}
 }
 
-// SendConfirmationEmail accepts user request for subscription, finds or creates city, creates user record,
+// InviteUser accepts user request for subscription, finds or creates city, creates user record,
 // creates confirmation token and sends it to user email
-func (s *SubscriptionManager) SendConfirmationEmail(ctx context.Context, request SubscribeRequest) error {
+func (s *SubscriptionManager) InviteUser(ctx context.Context, request SubscribeRequest) error {
 	city, err := s.state.GetCity(request.City)
 	if err != nil && errors.Is(gorm.ErrRecordNotFound, err) { // Make sure models is imported if not already
 		city, err = s.mapsIntegration.GetCity(ctx, request.City)
@@ -106,6 +106,7 @@ func (s *SubscriptionManager) SendConfirmationEmail(ctx context.Context, request
 	return nil
 }
 
+// Subscribe checks if sub token exists and creates subscription for the user
 func (s *SubscriptionManager) Subscribe(token string) error {
 	userToken, err := s.verifyToken(token)
 	if err != nil {
@@ -122,16 +123,19 @@ func (s *SubscriptionManager) Subscribe(token string) error {
 	}
 	err = s.state.SaveSubscription(subscription)
 	if err != nil {
+		zap.L().Error("error saving subscription", zap.Error(err))
 		return err
 	}
 	err = s.state.RemoveToken(userToken)
 	if err != nil {
+		zap.L().Error("error removing token", zap.Error(err))
 		return err
 	}
 
 	return nil
 }
 
+// Unsubscribe checks if unsub token exists and deletes user, and all related records
 func (s *SubscriptionManager) Unsubscribe(token string) error {
 	userToken, err := s.verifyToken(token)
 	if err != nil {
@@ -143,10 +147,12 @@ func (s *SubscriptionManager) Unsubscribe(token string) error {
 
 	err = s.state.RemoveUser(&models.User{ID: userToken.UserID})
 	if err != nil {
+		zap.L().Error("error removing user", zap.Error(err))
 		return err
 	}
 	err = s.state.RemoveToken(userToken)
 	if err != nil {
+		zap.L().Error("error removing token", zap.Error(err))
 		return err
 	}
 

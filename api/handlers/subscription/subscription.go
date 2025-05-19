@@ -38,7 +38,7 @@ func (sh *SubscriptionHandler) HandleSubscribe(c *fiber.Ctx) error {
 		return err
 	}
 
-	err = sh.manager.SendConfirmationEmail(c.Context(), request)
+	err = sh.manager.InviteUser(c.Context(), request)
 	if err != nil && err.Error() == "user already exists" {
 		return c.SendStatus(fiber.StatusConflict)
 	} else if err != nil {

@@ -3,7 +3,6 @@ package google
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/go-resty/resty/v2"
 	"github.com/google/uuid"
 	"net/url"
@@ -26,7 +25,6 @@ func (g *Google) fetchWeatherForCity(ctx context.Context, city *models.City) (*m
 		return nil, err
 	}
 	if !req.IsSuccess() {
-		fmt.Println(string(req.Body()))
 		return nil, errors.New("could not fetch weather for city: " + city.Name)
 	}
 

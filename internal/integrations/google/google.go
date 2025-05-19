@@ -3,6 +3,7 @@ package google
 import (
 	"context"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 	"googlemaps.github.io/maps"
 	"weather-subscriptions/internal/config"
 	"weather-subscriptions/internal/db/models"
@@ -22,6 +23,7 @@ func New(cfg *config.Config) integrations.MapsIntegration {
 func (g *Google) GetWeather(ctx context.Context, city *models.City) (*models.Weather, error) {
 	weather, err := g.fetchWeatherForCity(ctx, city)
 	if err != nil {
+		zap.L().Error("failed to fetch weather", zap.Error(err))
 		return nil, err
 	}
 
@@ -31,33 +33,16 @@ func (g *Google) GetWeather(ctx context.Context, city *models.City) (*models.Wea
 func (g *Google) GetCity(ctx context.Context, cityName string) (*models.City, error) {
 	mapsClient, err := maps.NewClient(maps.WithAPIKey(g.cfg.GoogleMapsApiKey))
 	if err != nil {
+		zap.L().Error("failed to create maps client", zap.Error(err))
 		return nil, err
 	}
 	return getCity(ctx, mapsClient, cityName)
 }
 
-//func (g *Google) GetWeatherByCityID(ctx context.Context, state state.Stateful, cityID string) (*models.Weather, error) {
-//	city, err := state.GetCityByID(cityID)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	weather, err := g.fetchWeatherForCity(ctx, city)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	err = state.SaveWeather(weather)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return weather, nil
-//}
-
 func getCity(ctx context.Context, client *maps.Client, cityName string) (*models.City, error) {
 	cityInfo, err := fetchCityInfo(ctx, client, cityName)
 	if err != nil {
+		zap.L().Error("failed to fetch city info", zap.Error(err))
 		return nil, err
 	}
 

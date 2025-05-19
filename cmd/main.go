@@ -60,7 +60,7 @@ func createWebserver(cfg *config.Config, set state.Stateful, mailer mailer_servi
 	routes.New(cfg, set, mailer).Setup(webApp)
 
 	if err := webApp.Listen(":" + cfg.Port); err != nil {
-		fmt.Printf("failed to start server: %v", err)
+		zap.L().Error("failed to start server: %v", zap.Error(err))
 	}
 }
 
@@ -70,12 +70,12 @@ func createScheduler(cfg *config.Config, state state.Stateful, mailer mailer_ser
 
 	_, err := scheduler.Every(1).Hour().Do(mailManager.SendHourly)
 	if err != nil {
-		fmt.Printf("failed to start cron: %v", err)
+		zap.L().Error("failed to start cron: %v", zap.Error(err))
 	}
 
 	_, err = scheduler.Every(1).Day().At("12:00").Do(mailManager.SendDaily)
 	if err != nil {
-		fmt.Printf("failed to start cron: %v", err)
+		zap.L().Error("failed to start cron: %v", zap.Error(err))
 	}
 
 	return scheduler

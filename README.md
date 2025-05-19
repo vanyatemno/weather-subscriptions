@@ -29,7 +29,7 @@ The primary way to run the application is using Docker Compose.
 
 1.  **Clone the repository:**
     ```bash
-    git clone <repository-url>
+    git clone https://github.com/vanyatemno/weather-subscriptions
     cd weather-subscriptions
     ```
 
@@ -182,7 +182,6 @@ For a fully detailed API specification, please refer to the Swagger documentatio
 ├── docker-compose.yml    # Docker Compose configuration
 ├── go.mod                # Go module dependencies
 ├── go.sum
-├── main.go               # (Likely a placeholder or example, main entry is cmd/main.go)
 ├── Makefile              # Make commands for build, lint, etc.
 └── README.md             # This file
 ```
@@ -229,12 +228,8 @@ graph TD
 
 *   **`make lint`**: Runs the Go linter (`golangci-lint`) to check code quality. Requires `check-lint` and `dep` targets.
 *   **`make dep`**: Tidies and downloads Go module dependencies.
-*   **`make build`**: Builds and starts the application using `docker compose up --build`.
 
 ## Contributing
 
 Please feel free to submit issues and pull requests.
 
-## License
-
-(Specify your project's license here, e.g., MIT License)
