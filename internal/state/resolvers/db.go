@@ -5,8 +5,6 @@ import (
 	"weather-subscriptions/internal/db/models"
 )
 
-// TODO: add insert/update functional
-
 type Resolver interface {
 	UserByID(id string) (*models.User, error)
 	UserByEmail(email string) (*models.User, error)

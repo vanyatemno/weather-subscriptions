@@ -27,18 +27,11 @@ type Stateful interface {
 	RemoveUser(user *models.User) error
 }
 
-// todo: use xsync map instead -- concurrent safe
-
-// todo: implement another structure "Cash" with invalidation ?
-// todo: create own cache ??
-
 type State struct {
-	resolver resolvers.Resolver
-	user     map[string]*models.User
-	// cities - resolves by key `<cityName>`
-	cities    map[string]*models.City
-	cityIDMap map[string]*models.City
-	// idea number 2: I don't need weather, older than some configured number of minutes
+	resolver      resolvers.Resolver
+	user          map[string]*models.User
+	cities        map[string]*models.City
+	cityIDMap     map[string]*models.City
 	weather       map[string]*models.Weather
 	tokens        map[string]*models.Token
 	subscriptions map[string]*models.Subscription

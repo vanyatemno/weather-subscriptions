@@ -105,11 +105,56 @@ Refer to `internal/config/config.go` for the complete structure and `internal/co
 
 ## API Endpoints
 
-The API routes are defined in `api/routes/routes.go`. For a detailed API specification, please refer to the Swagger documentation:
+The API routes are defined in `api/routes/routes.go`. Below is a summary of the available endpoints based on the `docs/swagger.yaml` specification.
 
-*   **Swagger YAML:** `docs/swagger.yaml`
+### Weather Operations
 
-You can use tools like Swagger Editor or Swagger UI to view and interact with the API documentation.
+#### GET /weather
+*   **Summary:** Get current weather for a city.
+*   **Description:** Returns the current weather forecast for the specified city using WeatherAPI.com.
+*   **Parameters:**
+    *   `city` (query, string, required): City name for weather forecast.
+*   **Responses:**
+    *   `200 OK`: Successful operation - current weather forecast returned.
+        *   Payload: `{ "temperature": number, "humidity": number, "description": string }`
+    *   `400 Bad Request`: Invalid request.
+    *   `404 Not Found`: City not found.
+
+### Subscription Operations
+
+#### POST /subscribe
+*   **Summary:** Subscribe to weather updates.
+*   **Description:** Subscribe an email to receive weather updates for a specific city with chosen frequency.
+*   **Parameters (form data):**
+    *   `email` (string, required): Email address to subscribe.
+    *   `city` (string, required): City for weather updates.
+    *   `frequency` (string, required, enum: ["hourly", "daily"]): Frequency of updates.
+*   **Responses:**
+    *   `200 OK`: Subscription successful. Confirmation email sent.
+    *   `400 Bad Request`: Invalid input.
+    *   `409 Conflict`: Email already subscribed.
+
+#### GET /confirm/{token}
+*   **Summary:** Confirm email subscription.
+*   **Description:** Confirms a subscription using the token sent in the confirmation email.
+*   **Parameters:**
+    *   `token` (path, string, required): Confirmation token.
+*   **Responses:**
+    *   `200 OK`: Subscription confirmed successfully.
+    *   `400 Bad Request`: Invalid token.
+    *   `404 Not Found`: Token not found.
+
+#### GET /unsubscribe/{token}
+*   **Summary:** Unsubscribe from weather updates.
+*   **Description:** Unsubscribes an email from weather updates using the token sent in emails.
+*   **Parameters:**
+    *   `token` (path, string, required): Unsubscribe token.
+*   **Responses:**
+    *   `200 OK`: Unsubscribed successfully.
+    *   `400 Bad Request`: Invalid token.
+    *   `404 Not Found`: Token not found.
+
+For a fully detailed API specification, please refer to the Swagger documentation: `docs/swagger.yaml`. You can use tools like Swagger Editor or Swagger UI to view and interact with it.
 
 ## Project Structure
 
