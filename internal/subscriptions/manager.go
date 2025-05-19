@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/google/uuid"
+	"github.com/gosimple/slug"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"weather-subscriptions/internal/db/models"
@@ -46,7 +47,7 @@ func New(state state.Stateful, mailer mailer2.MailerService, integration integra
 func (s *SubscriptionManager) InviteUser(ctx context.Context, request SubscribeRequest) error {
 	city, err := s.state.GetCity(request.City)
 	if err != nil && errors.Is(gorm.ErrRecordNotFound, err) { // Make sure models is imported if not already
-		city, err = s.mapsIntegration.GetCity(ctx, request.City)
+		city, err = s.mapsIntegration.GetCity(ctx, slug.Make(request.City))
 		if err != nil {
 			zap.L().Error("error getting city", zap.Error(err))
 			return err

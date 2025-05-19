@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gosimple/slug"
 	"gorm.io/gorm"
 	"weather-subscriptions/internal/integrations"
 	"weather-subscriptions/internal/state"
@@ -22,6 +23,7 @@ func (wh *WeatherHandler) GetWeather(c *fiber.Ctx) error {
 	if cityName == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "city name is required"})
 	}
+	cityName = slug.Make(cityName)
 
 	city, err := wh.state.GetCity(cityName)
 	if err != nil && errors.Is(gorm.ErrRecordNotFound, err) {

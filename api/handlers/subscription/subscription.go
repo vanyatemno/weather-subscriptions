@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/go-playground/validator"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gosimple/slug"
 	"weather-subscriptions/internal/integrations"
 	"weather-subscriptions/internal/mail/mailer_service"
 	"weather-subscriptions/internal/state"
@@ -37,6 +38,7 @@ func (sh *SubscriptionHandler) HandleSubscribe(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	request.City = slug.Make(request.City)
 
 	err = sh.manager.InviteUser(c.Context(), request)
 	if err != nil && err.Error() == "user already exists" {

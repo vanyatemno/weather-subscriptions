@@ -26,15 +26,11 @@ services:
       context: ./
       dockerfile: ./deploy/docker/backend/Dockerfile
     ports:
-      - '3000:3000'
+      - '${PORT}:${PORT}'
     expose:
-      - '3000'
-      - '13010'
+      - '${PORT}'
     env_file:
       - ./.env
-    environment:
-      - PORT=3000
-      - DEBUG_PORT=13010
     depends_on:
       postgres:
         condition: service_healthy

@@ -1,12 +1,11 @@
 package config
 
 type Config struct {
-	DNS                 string   `mapstructure:"DNS" json:"DNS" yaml:"DNS"`
-	Database            database `mapstructure:"DATABASE" json:"DATABASE" yaml:"DATABASE"`
-	Port                string   `mapstructure:"PORT" yaml:"PORT" json:"PORT" default:"3000"`
-	GoogleMapsApiKey    string   `mapstructure:"GOOGLE_MAPS_API_KEY" json:"GOOGLE_MAPS_API_KEY" yaml:"GOOGLE_MAPS_API_KEY"`
-	WeatherTimeRoundOff int      `mapstructure:"WEATHER_TIME_ROUND_OFF" json:"WEATHER_TIME_ROUND_OFF" yaml:"WEATHER_TIME_ROUND_OFF" default:"10"`
-	Mailer              mailer   `mapstructure:"MAILER" json:"MAILER" yaml:"MAILER"`
+	DNS              string   `mapstructure:"DNS" json:"DNS" yaml:"DNS"`
+	Database         database `mapstructure:"DATABASE" json:"DATABASE" yaml:"DATABASE"`
+	Port             string   `mapstructure:"PORT" yaml:"PORT" json:"PORT" default:"3000"`
+	GoogleMapsApiKey string   `mapstructure:"GOOGLE_MAPS_API_KEY" json:"GOOGLE_MAPS_API_KEY" yaml:"GOOGLE_MAPS_API_KEY"`
+	Mailer           mailer   `mapstructure:"MAILER" json:"MAILER" yaml:"MAILER"`
 }
 
 type database struct {
