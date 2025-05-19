@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"go.uber.org/zap"
 	"os/signal"
 	"syscall"
 	"time"
@@ -26,6 +27,9 @@ func main() {
 	var cancel context.CancelFunc
 	appCtx, cancel = signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
+
+	zap.ReplaceGlobals(zap.Must(zap.NewProduction()))
+
 	cfg, err := config.Read()
 	if err != nil {
 		panic(fmt.Sprintf("failed to read config: %v", err))

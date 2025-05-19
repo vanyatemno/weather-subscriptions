@@ -39,8 +39,10 @@ func (sh *SubscriptionHandler) HandleSubscribe(c *fiber.Ctx) error {
 	}
 
 	err = sh.manager.SendConfirmationEmail(c.Context(), request)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	if err != nil && err.Error() == "user already exists" {
+		return c.SendStatus(fiber.StatusConflict)
+	} else if err != nil {
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "confirmation email sent"})

@@ -61,7 +61,14 @@ func (s *SubscriptionManager) SendConfirmationEmail(ctx context.Context, request
 		return err
 	}
 
-	user := &models.User{
+	user, err := s.state.GetUserByEmail(request.Email)
+	if err != nil && !errors.Is(gorm.ErrRecordNotFound, err) {
+		return err
+	}
+	if user != nil {
+		return errors.New("user already exists")
+	}
+	user = &models.User{
 		ID:     uuid.Must(uuid.NewV7()).String(),
 		Email:  request.Email,
 		CityID: city.ID,

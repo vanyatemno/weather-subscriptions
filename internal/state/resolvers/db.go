@@ -9,6 +9,7 @@ type Resolver interface {
 	UserByID(id string) (*models.User, error)
 	UserByEmail(email string) (*models.User, error)
 	Token(token string) (*models.Token, error)
+	SubToken(userID string) (*models.Token, error)
 	UnsubToken(userID string) (*models.Token, error)
 	UserToken(userID, tokenType string) (*models.Token, error)
 	Subscription(userID string) (*models.Subscription, error)
@@ -41,6 +42,10 @@ func (r *DBResolver) UserByEmail(email string) (user *models.User, err error) {
 
 func (r *DBResolver) Token(token string) (t *models.Token, err error) {
 	return t, r.db.First(&t, "token = ?", token).Error
+}
+
+func (r *DBResolver) SubToken(userID string) (token *models.Token, err error) {
+	return token, r.db.First(&token, "user_id = ? AND type = ?", userID, models.Sub).Error
 }
 
 func (r *DBResolver) UnsubToken(userID string) (t *models.Token, err error) {

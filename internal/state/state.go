@@ -15,6 +15,7 @@ type Stateful interface {
 	GetWeather(cityID string) (*models.Weather, error)
 	GetToken(tokens string) (*models.Token, error)
 	GetUnsubToken(userID string) (*models.Token, error)
+	GetSubToken(userID string) (*models.Token, error)
 	GetSubscription(userID string) (*models.Subscription, error)
 	GetSubscriptions(subscriptionType models.SubscriptionType) ([]*models.Subscription, error)
 	SaveWeather(weather *models.Weather) error
@@ -91,6 +92,15 @@ func (s *State) GetToken(token string) (*models.Token, error) {
 	s.tokens[token] = userToken
 
 	return userToken, nil
+}
+
+func (s *State) GetSubToken(userID string) (*models.Token, error) {
+	token, err := s.resolver.SubToken(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return token, nil
 }
 
 func (s *State) GetUnsubToken(userID string) (*models.Token, error) {

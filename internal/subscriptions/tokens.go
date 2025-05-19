@@ -3,6 +3,7 @@ package subscriptions
 import (
 	"crypto/rand"
 	"errors"
+	"gorm.io/gorm"
 	"time"
 	"weather-subscriptions/internal/db/models"
 )
@@ -32,6 +33,19 @@ func (s *SubscriptionManager) createToken(userID string, tokenType models.TokenT
 
 	var token *models.Token
 	if tokenType == models.Sub {
+		foundToken, err := s.state.GetSubToken(userID)
+		if err != nil && !errors.Is(gorm.ErrRecordNotFound, err) {
+			return nil, err
+		}
+		if foundToken != nil && foundToken.ExpiryAt.Add(subTokenDuration).Before(time.Now()) {
+			return nil, errors.New("token already exists")
+		} else if foundToken != nil {
+			err = s.state.RemoveToken(foundToken)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		token = &models.Token{
 			Token:            code,
 			Type:             string(tokenType),
@@ -40,6 +54,19 @@ func (s *SubscriptionManager) createToken(userID string, tokenType models.TokenT
 			UserID:           userID,
 		}
 	} else {
+		foundToken, err := s.state.GetUnsubToken(userID)
+		if err != nil && !errors.Is(gorm.ErrRecordNotFound, err) {
+			return nil, err
+		}
+		if foundToken != nil && foundToken.ExpiryAt.Add(subTokenDuration).Before(time.Now()) {
+			return nil, errors.New("token already exists")
+		} else if foundToken != nil {
+			err = s.state.RemoveToken(foundToken)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		token = &models.Token{
 			Token:    code,
 			Type:     string(tokenType),
