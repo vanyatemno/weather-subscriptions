@@ -220,6 +220,18 @@ graph TD
     end
 ```
 
+## The plan for project
+
+1. Design the structure of the database
+2. Determine which service will be used to obtain weather data, conduct research
+3. Initialize the golang project, create a Dockerfile, docker-compose.yml.
+4. Write critical API modules - database models, database connection, base api.
+5. Write tests for the expected result and implement integration with the selected interface (MapsIntegration)
+6. Implement an email service and an email manager that will send information to users (MailManager).
+7. Implement the subscription manager (SubManager).
+8. Implement endpoint handlers and routes initialization.
+
+
 ## Available Scripts (Makefile)
 
 *   **`make lint`**: Runs the Go linter (`golangci-lint`) to check code quality. Requires `check-lint` and `dep` targets.
@@ -228,4 +240,3 @@ graph TD
 ## Contributing
 
 Please feel free to submit issues and pull requests.
-
