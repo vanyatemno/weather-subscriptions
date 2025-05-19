@@ -54,7 +54,7 @@ func (sh *SubscriptionHandler) HandleSubscribe(c *fiber.Ctx) error {
 func (sh *SubscriptionHandler) HandleConfirmSubscription(c *fiber.Ctx) error {
 	token := c.Params("token")
 	if token == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "token is required"})
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	err := sh.manager.Subscribe(token)
@@ -71,7 +71,7 @@ func (sh *SubscriptionHandler) HandleConfirmSubscription(c *fiber.Ctx) error {
 func (sh *SubscriptionHandler) HandleUnsubscribe(c *fiber.Ctx) error {
 	token := c.Params("token")
 	if token == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "token is required"})
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	err := sh.manager.Unsubscribe(token)

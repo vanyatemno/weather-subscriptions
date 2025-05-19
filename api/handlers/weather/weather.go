@@ -41,7 +41,7 @@ func (wh *WeatherHandler) GetWeather(c *fiber.Ctx) error {
 
 	weather, err := wh.googleInt.GetWeather(c.Context(), city)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		return c.SendStatus(fiber.StatusBadRequest)
 	}
 	err = wh.state.SaveWeather(weather)
 	if err != nil {
