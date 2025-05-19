@@ -58,9 +58,6 @@ func createWebserver(cfg *config.Config, set state.Stateful, mailer mailer_servi
 	webApp = fiber.New()
 
 	routes.New(cfg, set, mailer).Setup(webApp)
-
-	fmt.Println(cfg.Port)
-
 	if err := webApp.Listen(":" + cfg.Port); err != nil {
 		zap.L().Error("failed to start server: %v", zap.Error(err))
 	}
