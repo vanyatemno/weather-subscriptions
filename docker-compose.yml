@@ -1,0 +1,44 @@
+networks:
+  weather-subscriptions:
+    name: weather-subscriptions
+
+services:
+  postgres:
+    image: postgres:16.3-alpine
+    ports:
+      - '5432:5432'
+    expose:
+      - '5432'
+    networks:
+      weather-subscriptions:
+        aliases:
+          - postgres
+    env_file:
+      - deploy/docker/postgres/database.env
+    healthcheck:
+      test: pg_isready -U ${DATABASE_USER} -d ${DATABASE_NAME}
+      interval: 1s
+      timeout: 1s
+      retries: 20
+
+  backend:
+    build:
+      context: ./
+      dockerfile: ./deploy/docker/backend/Dockerfile
+    ports:
+      - '3000:3000'
+    expose:
+      - '3000'
+      - '13010'
+    env_file:
+      - ./.env
+    environment:
+      - PORT=3000
+      - DEBUG_PORT=13010
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      weather-subscriptions:
+        aliases:
+          - backend
