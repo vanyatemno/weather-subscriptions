@@ -96,10 +96,6 @@ Key configuration options:
     *   `FROM`: Sender email address.
     *   `SMTP`: SMTP server address.
     *   `PASSWORD`: SMTP password.
-    *   `WORKER_SIZE`: Number of workers in the mailer pool (default: `4`).
-    *   `QUEUE_SIZE`: Mailer queue capacity (default: `200`).
-    *   `MAX_RETRIES`: Max retries for sending an email (default: `2`).
-    *   `RETRY_DELAY`: Delay between retries in seconds (default: `10`).
 
 Refer to `internal/config/config.go` for the complete structure and `internal/config/load.go` for how they are loaded.
 
