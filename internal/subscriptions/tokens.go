@@ -21,7 +21,9 @@ func (s *SubscriptionManager) verifyToken(token string) (*models.Token, error) {
 	if foundToken.ExpiryAt.Before(time.Now()) {
 		return nil, errors.New("token expired")
 	}
-
+	if foundToken.DeletedAt.Valid && foundToken.DeletedAt.Time.Before(time.Now()) {
+		return nil, errors.New("token is expired")
+	}
 	return foundToken, nil
 }
 

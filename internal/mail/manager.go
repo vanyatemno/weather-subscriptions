@@ -81,7 +81,7 @@ func (m *Manager) sendMail(subscriptions []*models.Subscription, subType models.
 			err = m.mailer.Send(mail.MailMessage{
 				To:      []string{subscriptions[i].User.Email},
 				Subject: fmt.Sprintf("Your %s weather", strings.ToLower(string(subType))),
-				Body:    templates.GetWeatherEmailBody(weather, unsubToken.Token),
+				Body:    templates.GetWeatherEmailBody(weather, m.cfg.FrontendURL, unsubToken.Token),
 			})
 			if err != nil {
 				zap.L().Error("Error sending email", zap.Error(err))

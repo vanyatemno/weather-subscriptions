@@ -106,9 +106,9 @@ const weatherEmailTemplate = `<!DOCTYPE html>
         <div class="footer">
             <p>This is an automated weather notification.</p>
             <p>Stay safe and have a great day!</p>
-            <p>Code to unsubscribe from mailer: %s</p>						
+            <p><a href="%s">Follow this link to unsubscribe</a></p>						
         </div>
-    </div>
+    </div>s
 </body>
 </html>`
 
@@ -216,17 +216,17 @@ const verificationEmailTemplate = `<!DOCTYPE html>
         
         <div class="content">
             <h2>Welcome!</h2>
-            <p>To complete your registration, please enter the verification code below:</p>
+            <p>To complete your registration, please follow the link below:</p>
             
             <div class="verification-code">
-                <div class="code">%s</div>
+                <div class="code"><a href="%s"">Subscribe for mail</div>
             </div>
             
             <div class="instructions">
                 <h3>📋 Instructions:</h3>
                 <ul>
-                    <li>Enter this 6-digit code in the verification field</li>
-                    <li>The code is valid for 10 minutes</li>
+                    <li>Follow the provided link</li>
+                    <li>The code is valid for 24 hours</li>
                     <li>If you didn't request this code, please ignore this email</li>
                 </ul>
             </div>

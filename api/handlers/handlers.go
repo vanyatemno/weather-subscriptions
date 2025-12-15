@@ -17,6 +17,6 @@ type RequestHandler struct {
 func New(cfg *config.Config, state state.Stateful, mailer mailer_service.MailerService) *RequestHandler {
 	googleInt := google.New(cfg)
 	weatherHandler := weatherHandlers.NewWeatherHandler(googleInt, state)
-	subscriptionHandler := subscriptionHandlers.NewSubscriptionHandler(state, mailer, googleInt)
+	subscriptionHandler := subscriptionHandlers.NewSubscriptionHandler(cfg, state, mailer, googleInt)
 	return &RequestHandler{weatherHandler, subscriptionHandler}
 }

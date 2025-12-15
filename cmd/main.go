@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"go.uber.org/zap"
 	"os/signal"
 	"syscall"
@@ -56,6 +57,10 @@ func main() {
 
 func createWebserver(cfg *config.Config, set state.Stateful, mailer mailer_service.MailerService) {
 	webApp = fiber.New()
+
+	webApp.Use(cors.New(cors.Config{
+		AllowOrigins: "*",
+	}))
 
 	routes.New(cfg, set, mailer).Setup(webApp)
 	if err := webApp.Listen(":" + cfg.Port); err != nil {

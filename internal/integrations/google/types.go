@@ -20,22 +20,6 @@ type WeatherResponse struct {
 		Degrees float64 `json:"degrees"`
 		Unit    string  `json:"unit"`
 	} `json:"temperature"`
-	//FeelsLikeTemperature struct {
-	//	Degrees float64 `json:"degrees"`
-	//	Unit    string  `json:"unit"`
-	//} `json:"feelsLikeTemperature"`
-	//DewPoint struct {
-	//	Degrees float64 `json:"degrees"`
-	//	Unit    string  `json:"unit"`
-	//} `json:"dewPoint"`
-	//HeatIndex struct {
-	//	Degrees float64 `json:"degrees"`
-	//	Unit    string  `json:"unit"`
-	//} `json:"heatIndex"`
-	//WindChill struct {
-	//	Degrees float64 `json:"degrees"`
-	//	Unit    string  `json:"unit"`
-	//} `json:"windChill"`
 	RelativeHumidity int `json:"relativeHumidity"` // ++
 	//UvIndex          int `json:"uvIndex"`
 	//Precipitation    struct {

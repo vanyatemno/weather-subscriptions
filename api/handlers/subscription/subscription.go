@@ -4,6 +4,7 @@ import (
 	"github.com/go-playground/validator"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gosimple/slug"
+	"weather-subscriptions/internal/config"
 	"weather-subscriptions/internal/integrations"
 	"weather-subscriptions/internal/mail/mailer_service"
 	"weather-subscriptions/internal/state"
@@ -15,11 +16,12 @@ type SubscriptionHandler struct {
 }
 
 func NewSubscriptionHandler(
+	cfg *config.Config,
 	state state.Stateful,
 	mailer mailer_service.MailerService,
 	integration integrations.MapsIntegration,
 ) *SubscriptionHandler {
-	manager := subscriptions.New(state, mailer, integration)
+	manager := subscriptions.New(cfg, state, mailer, integration)
 	return &SubscriptionHandler{
 		manager: manager,
 	}
@@ -75,10 +77,8 @@ func (sh *SubscriptionHandler) HandleUnsubscribe(c *fiber.Ctx) error {
 	}
 
 	err := sh.manager.Unsubscribe(token)
-	if err != nil && err.Error() == "invalid token" {
+	if err != nil {
 		return c.SendStatus(fiber.StatusNotFound)
-	} else if err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
 	return c.SendStatus(fiber.StatusOK)

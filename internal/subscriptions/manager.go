@@ -3,10 +3,12 @@ package subscriptions
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/gosimple/slug"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"weather-subscriptions/internal/config"
 	"weather-subscriptions/internal/db/models"
 	"weather-subscriptions/internal/integrations"
 	mailer2 "weather-subscriptions/internal/mail/mailer_service"
@@ -29,13 +31,15 @@ type SubscribeRequest struct {
 }
 
 type SubscriptionManager struct {
+	cfg             *config.Config
 	state           state.Stateful
 	mapsIntegration integrations.MapsIntegration
 	mailer          mailer2.MailerService
 }
 
-func New(state state.Stateful, mailer mailer2.MailerService, integration integrations.MapsIntegration) SubManager {
+func New(config *config.Config, state state.Stateful, mailer mailer2.MailerService, integration integrations.MapsIntegration) SubManager {
 	return &SubscriptionManager{
+		cfg:             config,
 		state:           state,
 		mailer:          mailer,
 		mapsIntegration: integration,
@@ -97,7 +101,7 @@ func (s *SubscriptionManager) InviteUser(ctx context.Context, request SubscribeR
 	err = s.mailer.Send(mailer2.MailMessage{
 		To:      []string{user.Email},
 		Subject: "Confirmation code",
-		Body:    templates.GetVerificationEmailTemplate(token.Token),
+		Body:    templates.GetVerificationEmailTemplate(s.cfg.FrontendURL, token.Token),
 	})
 	if err != nil {
 		zap.L().Error("error sending confirmation email", zap.Error(err))
@@ -110,7 +114,9 @@ func (s *SubscriptionManager) InviteUser(ctx context.Context, request SubscribeR
 // Subscribe checks if sub token exists and creates subscription for the user
 func (s *SubscriptionManager) Subscribe(token string) error {
 	userToken, err := s.verifyToken(token)
+	fmt.Println("verified token")
 	if err != nil {
+		fmt.Println("error verifying token", err)
 		return errors.New("invalid token")
 	}
 	if userToken.Type != string(models.Sub) {

@@ -6,16 +6,28 @@ import (
 	"weather-subscriptions/internal/db/models"
 )
 
-func GetWeatherEmailBody(weather *models.Weather, code string) string {
+const (
+	unsubscribeLinkTemplate = "%s/unsubscribe/%s"
+	subscribeLinkTemplate   = "%s/confirm/%s"
+)
+
+func GetWeatherEmailBody(
+	weather *models.Weather,
+	frontendURL, code string,
+) string {
 	return fmt.Sprintf(
 		weatherEmailTemplate,
 		strconv.FormatFloat(weather.Temperature, 'f', -1, 64),
 		strconv.Itoa(weather.Humidity),
 		weather.Description,
-		code,
+		fmt.Sprintf(unsubscribeLinkTemplate, frontendURL, code),
 	)
 }
 
-func GetVerificationEmailTemplate(code string) string {
-	return fmt.Sprintf(verificationEmailTemplate, code)
+func GetVerificationEmailTemplate(frontendURL, code string) string {
+	subscribeLink := fmt.Sprintf(subscribeLinkTemplate, frontendURL, code)
+	return fmt.Sprintf(
+		verificationEmailTemplate,
+		subscribeLink,
+	)
 }
