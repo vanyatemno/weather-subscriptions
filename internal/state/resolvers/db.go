@@ -18,6 +18,7 @@ type Resolver interface {
 	CityByID(id string) (*models.City, error)
 	Weather(CityID string) (*models.Weather, error)
 	WeatherByCityID(cityID string) (*models.Weather, error)
+	AdviseByWeatherID(weatherID string) ([]*models.Advise, error)
 	Save(model any) error
 	Remove(model any) error
 }
@@ -83,8 +84,16 @@ func (r *DBResolver) WeatherByCityID(cityID string) (weather *models.Weather, er
 	return weather, r.db.Order("time desc").First(&weather, "city_id = ?", cityID).Error
 }
 
+func (r *DBResolver) AdviseByWeatherID(weatherID string) ([]*models.Advise, error) {
+	var advises []*models.Advise
+	err := r.db.Where("weather_id = ?", weatherID).Find(&advises).Error
+	return advises, err
+}
+
 func (r *DBResolver) Save(model any) error {
 	return r.db.Save(model).Error
 }
 
-func (r *DBResolver) Remove(model any) error { return r.db.Delete(model).Error }
+func (r *DBResolver) Remove(model any) error {
+	return r.db.Delete(model).Error
+}

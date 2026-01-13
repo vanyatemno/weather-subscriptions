@@ -16,14 +16,6 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/appbin ./cmd/main
 FROM alpine:latest
 LABEL MAINTAINER = <vanya04400@gmail.com>
 
-# Following commands are for installing CA certs (for proper functioning of HTTPS and other TLS)
-# RUN apk --update add ca-certificates && \
-#    rm -rf /var/cache/apk/*
-
-## Add new user 'appuser'
-#RUN adduser -D appuser
-#USER appuser
-
 COPY --from=builder /app /home/appuser/app
 
 WORKDIR /home/appuser/app

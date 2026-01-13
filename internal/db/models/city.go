@@ -1,14 +1,22 @@
 package models
 
-import "strconv"
+import (
+	"strconv"
+	"time"
+)
 
 type City struct {
-	ID            string  `gorm:"primaryKey;default:uuid_generate_v4()"`
+	ID string `gorm:"primaryKey;default:uuid_generate_v4()"`
+
 	Name          string  `gorm:"not null;unique"`
 	Longitude     float64 `gorm:"not null"`
 	Latitude      float64 `gorm:"not null"`
 	GooglePlaceID string  `gorm:"not null;unique"`
-	Users         []User  `gorm:"foreignKey:CityID"`
+
+	Users []User `gorm:"foreignKey:CityID"`
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type Coordinates struct {

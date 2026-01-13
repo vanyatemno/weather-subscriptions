@@ -9,12 +9,14 @@ import (
 	"syscall"
 	"time"
 	"weather-subscriptions/api/routes"
+	"weather-subscriptions/internal/advises"
+	"weather-subscriptions/internal/integrations/openai"
 	"weather-subscriptions/internal/mail"
 	"weather-subscriptions/internal/mail/mailer_service"
 	"weather-subscriptions/internal/state"
 
 	"github.com/go-co-op/gocron"
-	fiber "github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2"
 	"weather-subscriptions/internal/config"
 	"weather-subscriptions/internal/db"
 )
@@ -44,7 +46,10 @@ func main() {
 	}
 	set := state.NewState(database)
 
-	scheduler := createScheduler(cfg, set, mailerService)
+	openaiService := openai.NewOpenAIService(cfg)
+	advisesService := advises.NewAdvisesService(set, openaiService)
+
+	scheduler := createScheduler(cfg, set, mailerService, advisesService)
 
 	scheduler.StartAsync()
 	go createWebserver(cfg, set, mailerService)
@@ -68,8 +73,13 @@ func createWebserver(cfg *config.Config, set state.Stateful, mailer mailer_servi
 	}
 }
 
-func createScheduler(cfg *config.Config, state state.Stateful, mailer mailer_service.MailerService) *gocron.Scheduler {
-	mailManager := mail.New(appCtx, cfg, state, mailer)
+func createScheduler(
+	cfg *config.Config,
+	state state.Stateful,
+	mailer mailer_service.MailerService,
+	advises *advises.AdvisesService,
+) *gocron.Scheduler {
+	mailManager := mail.New(appCtx, cfg, state, mailer, advises)
 	scheduler := gocron.NewScheduler(time.UTC)
 
 	_, err := scheduler.Every(1).Hour().Do(mailManager.SendHourly)

@@ -102,6 +102,19 @@ const weatherEmailTemplate = `<!DOCTYPE html>
                 <span class="weather-value">%s</span>
             </div>
         </div>
+
+				<tr>
+						<td style="padding: 0 20px 20px 20px;">
+								<table width="100%%" cellpadding="0" cellspacing="0" border="0">
+										<tr>
+												<td style="padding: 20px 0 10px 0;">
+														<h2 style="margin: 0; color: #2c3e50; font-size: 22px; border-bottom: 2px solid #3498db; padding-bottom: 10px;">📍 Places You Might Like</h2>
+												</td>
+										</tr>
+								</table>
+								%s
+						</td>
+				</tr>
         
         <div class="footer">
             <p>This is an automated weather notification.</p>

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"weather-subscriptions/internal/advises"
 	"weather-subscriptions/internal/config"
 	"weather-subscriptions/internal/db/models"
 	"weather-subscriptions/internal/integrations"
@@ -27,11 +28,12 @@ type MailManager interface {
 }
 
 type Manager struct {
+	ctx                context.Context
 	cfg                *config.Config
 	state              state.Stateful
 	mailer             mail.MailerService
 	weatherIntegration integrations.MapsIntegration
-	ctx                context.Context
+	advisesService     *advises.AdvisesService
 }
 
 // SendHourly sends email with current weather information to users with "hourly" subscription
@@ -75,13 +77,23 @@ func (m *Manager) sendMail(subscriptions []*models.Subscription, subType models.
 			return err
 		}
 		unsubToken, err := m.state.GetUnsubToken(subscriptions[i].User.ID)
+		if err != nil {
+			zap.L().Error("failed to get unsub token", zap.Error(err))
+			return err
+		}
+		advise, err := m.advisesService.GetAdvise(m.ctx, weather)
+		if err != nil {
+			zap.L().Error("failed to get weather advise for subscription", zap.Error(err))
+			return err
+		}
+
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			err = m.mailer.Send(mail.MailMessage{
 				To:      []string{subscriptions[i].User.Email},
 				Subject: fmt.Sprintf("Your %s weather", strings.ToLower(string(subType))),
-				Body:    templates.GetWeatherEmailBody(weather, m.cfg.FrontendURL, unsubToken.Token),
+				Body:    templates.GetWeatherEmailBody(weather, m.cfg.FrontendURL, unsubToken.Token, advise),
 			})
 			if err != nil {
 				zap.L().Error("Error sending email", zap.Error(err))
@@ -117,6 +129,7 @@ func New(
 	cfg *config.Config,
 	state state.Stateful,
 	mailer mail.MailerService,
+	advisesService *advises.AdvisesService,
 ) MailManager {
 	googleInt := google.New(cfg)
 	return &Manager{
@@ -125,5 +138,6 @@ func New(
 		mailer:             mailer,
 		ctx:                ctx,
 		weatherIntegration: googleInt,
+		advisesService:     advisesService,
 	}
 }

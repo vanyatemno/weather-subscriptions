@@ -7,6 +7,7 @@ type Config struct {
 	FrontendURL      string   `mapstructure:"FRONTEND_URL" yaml:"FRONTEND_URL"`
 	GoogleMapsApiKey string   `mapstructure:"GOOGLE_MAPS_API_KEY" json:"GOOGLE_MAPS_API_KEY" yaml:"GOOGLE_MAPS_API_KEY"`
 	Mailer           mailer   `mapstructure:"MAILER" json:"MAILER" yaml:"MAILER"`
+	OpenAI           OpenAI   `mapstructure:"OPENAI" json:"OPENAI" yaml:"OPENAI"`
 }
 
 type database struct {
@@ -23,4 +24,8 @@ type mailer struct {
 	From     string `mapstructure:"FROM" yaml:"FROM"`
 	SMTP     string `mapstructure:"SMTP" yaml:"SMTP"`
 	Password string `mapstructure:"PASSWORD" yaml:"PASSWORD"`
+}
+
+type OpenAI struct {
+	OpenrouterAPIKey string `mapstructure:"API_KEY" json:"API_KEY" yaml:"API_KEY"`
 }

@@ -1,10 +1,17 @@
 package models
 
+import "time"
+
 type Subscription struct {
-	ID        string `gorm:"primaryKey;default:uuid_generate_v4()"`
+	ID     string `gorm:"primaryKey;default:uuid_generate_v4()"`
+	UserID string `gorm:"text;not null"`
+
 	Frequency string `gorm:"text;not null;index"`
-	UserID    string `gorm:"text;not null"`
-	User      User   `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+
+	User User `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type SubscriptionType string

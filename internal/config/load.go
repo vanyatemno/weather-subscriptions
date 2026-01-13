@@ -54,7 +54,6 @@ func read(config any, opts ...viper.DecoderConfigOption) error {
 }
 
 // setDefaults sets default values for struct fields based using value from default tag
-// nolint:gocritic,nolintlint
 func setDefaults(parentName string, vip *viper.Viper, t reflect.StructField, v reflect.Value) error {
 	if v.Kind() == reflect.Struct {
 		value, ok := t.Tag.Lookup(mapStructureTagName)

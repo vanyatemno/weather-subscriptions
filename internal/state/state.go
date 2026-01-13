@@ -1,8 +1,9 @@
 package state
 
 import (
-	"gorm.io/gorm"
 	"strings"
+
+	"gorm.io/gorm"
 	"weather-subscriptions/internal/db/models"
 	"weather-subscriptions/internal/state/resolvers"
 )
@@ -18,14 +19,17 @@ type Stateful interface {
 	GetSubToken(userID string) (*models.Token, error)
 	GetSubscription(userID string) (*models.Subscription, error)
 	GetSubscriptions(subscriptionType models.SubscriptionType) ([]*models.Subscription, error)
+	GetAdvises(weatherID string) ([]*models.Advise, error)
 	SaveWeather(weather *models.Weather) error
 	SaveCity(city *models.City) error
 	SaveUser(user *models.User) error
 	SaveToken(token *models.Token) error
 	SaveSubscription(subscription *models.Subscription) error
+	SaveAdvises(subscription []*models.Advise) error
 	RemoveSubscription(subscription *models.Subscription) error
 	RemoveToken(token *models.Token) error
 	RemoveUser(user *models.User) error
+	RemoveAdvise(advise *models.Advise) error
 }
 
 type State struct {
@@ -36,6 +40,7 @@ type State struct {
 	weather       map[string]*models.Weather
 	tokens        map[string]*models.Token
 	subscriptions map[string]*models.Subscription
+	advises       map[string][]*models.Advise
 }
 
 func (s *State) GetUser(id string) (*models.User, error) {
@@ -251,6 +256,52 @@ func (s *State) RemoveToken(token *models.Token) error {
 	return nil
 }
 
+func (s *State) GetAdvises(weatherID string) ([]*models.Advise, error) {
+	advises, ok := s.advises[weatherID]
+	if !ok {
+		advises, err := s.resolver.AdviseByWeatherID(weatherID)
+		if err != nil {
+			return nil, err
+		}
+		return advises, nil
+	}
+
+	return advises, nil
+}
+
+func (s *State) SaveAdvises(advises []*models.Advise) error {
+	for _, advise := range advises {
+		err := s.resolver.Save(advise)
+		if err != nil {
+			return err
+		}
+	}
+
+	s.advises[advises[0].WeatherID] = advises
+
+	return nil
+}
+
+func (s *State) RemoveAdvise(advise *models.Advise) error {
+	err := s.resolver.Remove(advise)
+	if err != nil {
+		return err
+	}
+
+	advises, ok := s.advises[advise.WeatherID]
+	if ok {
+		var filteredAdvises []*models.Advise
+		for i := range advises {
+			if advises[i].ID != advise.ID {
+				filteredAdvises = append(filteredAdvises, advises[i])
+			}
+		}
+		s.advises[advise.WeatherID] = filteredAdvises
+	}
+
+	return nil
+}
+
 func NewState(db *gorm.DB) Stateful {
 	resolver := resolvers.New(db)
 	return &State{
@@ -261,5 +312,6 @@ func NewState(db *gorm.DB) Stateful {
 		weather:       make(map[string]*models.Weather),
 		tokens:        make(map[string]*models.Token),
 		subscriptions: make(map[string]*models.Subscription),
+		advises:       make(map[string][]*models.Advise),
 	}
 }

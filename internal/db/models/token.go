@@ -12,5 +12,7 @@ type Token struct {
 	ExpiryAt         time.Time `gorm:"not null;check:expiry_at > now()"`
 	UserID           string    `gorm:"not null;text;uniqueIndex:uni_user_id_token_type;"`
 	User             User      `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	CreatedAt        time.Time `gorm:"not null;check:created_at > now()"`
+	UpdatedAt        time.Time `gorm:"not null;check:updated_at > now()"`
 	DeletedAt        gorm.DeletedAt
 }
