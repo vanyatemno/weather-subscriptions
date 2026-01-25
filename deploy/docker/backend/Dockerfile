@@ -1,4 +1,4 @@
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 COPY cmd ./cmd
@@ -6,6 +6,8 @@ COPY internal ./internal
 COPY go.mod go.sum *.go ./
 COPY deploy ./deploy
 COPY api ./api
+COPY docs ./docs
+COPY test ./test
 
 # Toggle CGO based on your app requirement. CGO_ENABLED=1 for enabling CGO
 RUN #CGO_ENABLED=0 go build -ldflags '-s -w -extldflags "-static"' -o /cmd/main.go

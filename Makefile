@@ -15,3 +15,6 @@ lint-staged:
 
 swagger:
 	@swag init -g cmd/main.go
+
+e2e:
+	docker compose up --build --abort-on-container-exit --exit-code-from e2e-tests e2e-tests

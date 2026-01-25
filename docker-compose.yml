@@ -38,3 +38,14 @@ services:
       weather-subscriptions:
         aliases:
           - backend
+
+  e2e-tests:
+    build:
+      context: ./
+      dockerfile: ./deploy/docker/backend/Dockerfile
+    env_file:
+      - ./deploy/docker/backend/.e2e.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: go test ./test/e2e/...
