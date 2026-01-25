@@ -3,6 +3,7 @@ package templates
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"weather-subscriptions/internal/advises"
 	"weather-subscriptions/internal/db/models"
 )
@@ -37,7 +38,7 @@ func GetWeatherEmailBody(
 }
 
 func buildRecommendations(advise *advises.Advise) string {
-	result := ""
+	var recommendations []string
 	for i := range advise.Places {
 		recommendation := fmt.Sprintf(
 			recommendationTemplate,
@@ -45,10 +46,10 @@ func buildRecommendations(advise *advises.Advise) string {
 			advise.Places[i].Description,
 			advise.Places[i].Link,
 		)
-		result += recommendation + "\n"
+		recommendations = append(recommendations, recommendation)
 	}
 
-	return result
+	return strings.Join(recommendations, "\n")
 }
 
 func GetVerificationEmailTemplate(frontendURL, code string) string {

@@ -1,8 +1,9 @@
-package mailer_service
+package mail
 
 import (
-	"gopkg.in/gomail.v2"
 	"weather-subscriptions/internal/config"
+
+	"gopkg.in/gomail.v2"
 )
 
 type MailerService interface {
@@ -13,7 +14,7 @@ type Mailer struct {
 	cfg *config.Config
 }
 
-func New(cfg *config.Config) MailerService {
+func NewMailerService(cfg *config.Config) MailerService {
 	return &Mailer{cfg: cfg}
 }
 

@@ -1,4 +1,4 @@
-package mailer_service
+package mail
 
 // SMTPConfig holds the configuration required to connect and authenticate with an SMTP server.
 type SMTPConfig struct {

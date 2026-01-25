@@ -2,9 +2,11 @@ package google
 
 import (
 	"context"
+
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"googlemaps.github.io/maps"
+
 	"weather-subscriptions/internal/config"
 	"weather-subscriptions/internal/db/models"
 	"weather-subscriptions/internal/integrations"
@@ -31,7 +33,7 @@ func (g *Google) GetWeather(ctx context.Context, city *models.City) (*models.Wea
 }
 
 func (g *Google) GetCity(ctx context.Context, cityName string) (*models.City, error) {
-	mapsClient, err := maps.NewClient(maps.WithAPIKey(g.cfg.GoogleMapsApiKey))
+	mapsClient, err := maps.NewClient(maps.WithAPIKey(g.cfg.GoogleMapsAPIKey))
 	if err != nil {
 		zap.L().Error("failed to create maps client", zap.Error(err))
 		return nil, err

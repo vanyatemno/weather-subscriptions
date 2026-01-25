@@ -3,7 +3,9 @@ package advises
 import (
 	"context"
 	"fmt"
+
 	"go.uber.org/zap"
+
 	"weather-subscriptions/internal/db/models"
 	"weather-subscriptions/internal/integrations"
 	"weather-subscriptions/internal/state"
@@ -57,14 +59,14 @@ Vibe Check: Look for reviews mentioning "beautiful sunset," "best view in the ci
 Step 3: Generate Recommendations Provide a curated list of 3-5 distinct options. Do not include any links in place description text.`
 
 type AdvisesService struct {
-	state    state.Stateful
-	provider integrations.Generator
+	advisesState state.AdvisesState
+	provider     integrations.Generator
 }
 
-func NewAdvisesService(state state.Stateful, provider integrations.Generator) *AdvisesService {
+func NewAdvisesService(advisesState state.AdvisesState, provider integrations.Generator) *AdvisesService {
 	return &AdvisesService{
-		state:    state,
-		provider: provider,
+		advisesState: advisesState,
+		provider:     provider,
 	}
 }
 
@@ -74,7 +76,7 @@ func (a *AdvisesService) GetAdvise(
 ) (*Advise, error) {
 	var res Advise
 
-	advises, err := a.state.GetAdvises(weather.ID)
+	advises, err := a.advisesState.GetAdvises(weather.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -94,6 +96,7 @@ func (a *AdvisesService) GetAdvise(
 		zap.L().Error("Failed to generate structured response", zap.Error(err))
 		return nil, err
 	}
+	// remove links provided by AI as a default
 	cleanupResponse(&res)
 
 	err = a.saveAdvise(&res, weather)
@@ -124,9 +127,10 @@ func (a *AdvisesService) saveAdvise(advise *Advise, weather *models.Weather) err
 		})
 	}
 
-	return a.state.SaveAdvises(advisesModels)
+	return a.advisesState.SaveAdvises(advisesModels)
 }
 
+// cleanupResponse - removes all source links provided in AI response
 func cleanupResponse(res *Advise) {
 	for i := range res.Places {
 		res.Places[i].Description = util.RemoveAiLinks(res.Places[i].Description)

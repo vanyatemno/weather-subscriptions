@@ -9,21 +9,14 @@ type Subscription struct {
 	Frequency string `gorm:"text;not null;index"`
 
 	User User `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
-type SubscriptionType string
+type SubscriptionType = string
 
 const (
 	DAILY  SubscriptionType = "daily"
 	HOURLY SubscriptionType = "hourly"
-)
-
-type TokenType string
-
-const (
-	Sub   TokenType = "subscribe"
-	Unsub TokenType = "unsubscribe"
 )

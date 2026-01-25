@@ -3,15 +3,16 @@ package subscriptions
 import (
 	"context"
 	"errors"
-	"fmt"
+	"weather-subscriptions/internal/mail"
+
 	"github.com/google/uuid"
 	"github.com/gosimple/slug"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+
 	"weather-subscriptions/internal/config"
 	"weather-subscriptions/internal/db/models"
 	"weather-subscriptions/internal/integrations"
-	mailer2 "weather-subscriptions/internal/mail/mailer_service"
 	"weather-subscriptions/internal/state"
 	"weather-subscriptions/internal/templates"
 )
@@ -31,32 +32,46 @@ type SubscribeRequest struct {
 }
 
 type SubscriptionManager struct {
-	cfg             *config.Config
-	state           state.Stateful
-	mapsIntegration integrations.MapsIntegration
-	mailer          mailer2.MailerService
+	cfg                *config.Config
+	citiesState        state.CitiesState
+	usersState         state.UsersState
+	tokenState         state.TokensState
+	subscriptionsState state.SubscriptionsState
+	mapsIntegration    integrations.MapsIntegration
+	mailer             mail.MailerService
 }
 
-func New(config *config.Config, state state.Stateful, mailer mailer2.MailerService, integration integrations.MapsIntegration) SubManager {
+func New(
+	config *config.Config,
+	citiesState state.CitiesState,
+	usersState state.UsersState,
+	tokenState state.TokensState,
+	subscriptionsState state.SubscriptionsState,
+	mailerService mail.MailerService,
+	integration integrations.MapsIntegration,
+) SubManager {
 	return &SubscriptionManager{
-		cfg:             config,
-		state:           state,
-		mailer:          mailer,
-		mapsIntegration: integration,
+		cfg:                config,
+		citiesState:        citiesState,
+		usersState:         usersState,
+		tokenState:         tokenState,
+		subscriptionsState: subscriptionsState,
+		mailer:             mailerService,
+		mapsIntegration:    integration,
 	}
 }
 
 // InviteUser accepts user request for subscription, finds or creates city, creates user record,
 // creates confirmation token and sends it to user email
 func (s *SubscriptionManager) InviteUser(ctx context.Context, request SubscribeRequest) error {
-	city, err := s.state.GetCity(request.City)
-	if err != nil && errors.Is(gorm.ErrRecordNotFound, err) { // Make sure models is imported if not already
+	city, err := s.citiesState.GetCity(request.City)
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		city, err = s.mapsIntegration.GetCity(ctx, slug.Make(request.City))
 		if err != nil {
 			zap.L().Error("error getting city", zap.Error(err))
 			return err
 		}
-		err = s.state.SaveCity(city)
+		err = s.citiesState.SaveCity(city)
 		if err != nil {
 			zap.L().Error("error saving city", zap.Error(err))
 			return err
@@ -66,8 +81,8 @@ func (s *SubscriptionManager) InviteUser(ctx context.Context, request SubscribeR
 		return err
 	}
 
-	user, err := s.state.GetUserByEmail(request.Email)
-	if err != nil && !errors.Is(gorm.ErrRecordNotFound, err) {
+	user, err := s.usersState.GetUserByEmail(request.Email)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return err
 	}
 	if user != nil {
@@ -79,7 +94,7 @@ func (s *SubscriptionManager) InviteUser(ctx context.Context, request SubscribeR
 		CityID: city.ID,
 		City:   *city,
 	}
-	err = s.state.SaveUser(user)
+	err = s.usersState.SaveUser(user)
 	if err != nil {
 		zap.L().Error("error saving user", zap.Error(err))
 		return err
@@ -98,7 +113,7 @@ func (s *SubscriptionManager) InviteUser(ctx context.Context, request SubscribeR
 		return err
 	}
 
-	err = s.mailer.Send(mailer2.MailMessage{
+	err = s.mailer.Send(mail.MailMessage{
 		To:      []string{user.Email},
 		Subject: "Confirmation code",
 		Body:    templates.GetVerificationEmailTemplate(s.cfg.FrontendURL, token.Token),
@@ -114,26 +129,25 @@ func (s *SubscriptionManager) InviteUser(ctx context.Context, request SubscribeR
 // Subscribe checks if sub token exists and creates subscription for the user
 func (s *SubscriptionManager) Subscribe(token string) error {
 	userToken, err := s.verifyToken(token)
-	fmt.Println("verified token")
 	if err != nil {
-		fmt.Println("error verifying token", err)
 		return errors.New("invalid token")
 	}
-	if userToken.Type != string(models.Sub) {
+	if userToken.Type != models.Sub {
+		zap.L().Error("found a token of invalid type", zap.String("token", token))
 		return errors.New("invalid token")
 	}
 
 	subscription := &models.Subscription{
 		ID:        uuid.Must(uuid.NewV7()).String(),
-		Frequency: userToken.SubscriptionType,
+		Frequency: *userToken.SubscriptionType,
 		UserID:    userToken.UserID,
 	}
-	err = s.state.SaveSubscription(subscription)
+	err = s.subscriptionsState.SaveSubscription(subscription)
 	if err != nil {
 		zap.L().Error("error saving subscription", zap.Error(err))
 		return err
 	}
-	err = s.state.RemoveToken(userToken)
+	err = s.tokenState.RemoveToken(userToken)
 	if err != nil {
 		zap.L().Error("error removing token", zap.Error(err))
 		return err
@@ -148,16 +162,16 @@ func (s *SubscriptionManager) Unsubscribe(token string) error {
 	if err != nil {
 		return errors.New("invalid token")
 	}
-	if userToken.Type != string(models.Unsub) {
+	if userToken.Type != models.Unsub {
 		return errors.New("invalid token")
 	}
 
-	err = s.state.RemoveUser(&models.User{ID: userToken.UserID})
+	err = s.usersState.RemoveUser(&models.User{ID: userToken.UserID})
 	if err != nil {
 		zap.L().Error("error removing user", zap.Error(err))
 		return err
 	}
-	err = s.state.RemoveToken(userToken)
+	err = s.tokenState.RemoveToken(userToken)
 	if err != nil {
 		zap.L().Error("error removing token", zap.Error(err))
 		return err

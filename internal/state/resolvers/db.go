@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"gorm.io/gorm"
+
 	"weather-subscriptions/internal/db/models"
 )
 
@@ -61,8 +62,16 @@ func (r *DBResolver) Subscription(userID string) (subscription *models.Subscript
 	return subscription, r.db.First(&subscription, "user_id = ?", userID).Error
 }
 
-func (r *DBResolver) Subscriptions(subscriptionType models.SubscriptionType) (subscriptions []*models.Subscription, err error) {
-	return subscriptions, r.db.Preload("User").Where("frequency = ?", subscriptionType).Find(&subscriptions).Error
+func (r *DBResolver) Subscriptions(
+	subscriptionType models.SubscriptionType,
+) ([]*models.Subscription, error) {
+	var subscriptions []*models.Subscription
+	err := r.db.Preload("User").Where("frequency = ?", subscriptionType).Find(&subscriptions).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return subscriptions, nil
 }
 
 func (r *DBResolver) CityByID(id string) (city *models.City, err error) {
@@ -73,10 +82,10 @@ func (r *DBResolver) City(name string) (city *models.City, err error) {
 	return city, r.db.First(&city, "name ILIKE ?", name).Error
 }
 
-func (r *DBResolver) Weather(CityID string) (weather *models.Weather, err error) {
+func (r *DBResolver) Weather(cityID string) (weather *models.Weather, err error) {
 	return weather, r.db.
 		Order("time DESC").
-		First(&weather, "city_id = ?", CityID).
+		First(&weather, "city_id = ?", cityID).
 		Error
 }
 

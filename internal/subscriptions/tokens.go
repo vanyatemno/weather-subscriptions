@@ -1,20 +1,18 @@
 package subscriptions
 
 import (
-	"crypto/rand"
 	"errors"
-	"gorm.io/gorm"
 	"time"
-	"weather-subscriptions/internal/db/models"
-)
 
-const (
-	subTokenDuration   = 24 * time.Hour
-	unsubTokenDuration = time.Hour * 24 * 28 * 13 * 100
+	"weather-subscriptions/internal/db/models"
+	"weather-subscriptions/internal/util"
+
+	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 func (s *SubscriptionManager) verifyToken(token string) (*models.Token, error) {
-	foundToken, err := s.state.GetToken(token)
+	foundToken, err := s.tokenState.GetToken(token)
 	if err != nil {
 		return nil, err
 	}
@@ -27,73 +25,57 @@ func (s *SubscriptionManager) verifyToken(token string) (*models.Token, error) {
 	return foundToken, nil
 }
 
-func (s *SubscriptionManager) createToken(userID string, tokenType models.TokenType, frequency *string) (*models.Token, error) {
-	code, err := generateCode()
+func (s *SubscriptionManager) createToken(
+	userID string,
+	tokenType models.TokenType,
+	frequency *models.SubscriptionType,
+) (*models.Token, error) {
+	code, err := util.GenerateCode(emailValidationCodeLength)
 	if err != nil {
+		zap.L().Error("failed to generate code", zap.Error(err))
 		return nil, errors.New("failed to generate code")
 	}
 
-	var token *models.Token
-	if tokenType == models.Sub {
-		foundToken, err := s.state.GetSubToken(userID)
-		if err != nil && !errors.Is(gorm.ErrRecordNotFound, err) {
-			return nil, err
-		}
-		if foundToken != nil && foundToken.ExpiryAt.Add(subTokenDuration).Before(time.Now()) {
-			return nil, errors.New("token already exists")
-		} else if foundToken != nil {
-			err = s.state.RemoveToken(foundToken)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		token = &models.Token{
-			Token:            code,
-			Type:             string(tokenType),
-			SubscriptionType: *frequency,
-			ExpiryAt:         time.Now().Add(subTokenDuration),
-			UserID:           userID,
-		}
-	} else {
-		foundToken, err := s.state.GetUnsubToken(userID)
-		if err != nil && !errors.Is(gorm.ErrRecordNotFound, err) {
-			return nil, err
-		}
-		if foundToken != nil && foundToken.ExpiryAt.Add(subTokenDuration).Before(time.Now()) {
-			return nil, errors.New("token already exists")
-		} else if foundToken != nil {
-			err = s.state.RemoveToken(foundToken)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		token = &models.Token{
-			Token:    code,
-			Type:     string(tokenType),
-			ExpiryAt: time.Now().Add(unsubTokenDuration),
-			UserID:   userID,
-		}
+	err = s.checkUserToken(userID, tokenType)
+	if err != nil {
+		zap.L().Error("failed to check user token existence", zap.Error(err))
+		return nil, err
 	}
 
-	err = s.state.SaveToken(token)
+	token := &models.Token{
+		Token:            code,
+		Type:             tokenType,
+		SubscriptionType: frequency,
+		UserID:           userID,
+	}
+	token.SetTokenExpiry()
+
+	err = s.tokenState.SaveToken(token)
 	if err != nil {
+		zap.L().Error("failed to save token", zap.Error(err))
 		return nil, errors.New("failed to save token")
 	}
 
 	return token, nil
 }
 
-func generateCode() (string, error) {
-	codes := make([]byte, emailValidationCodeLength)
-	if _, err := rand.Read(codes); err != nil {
-		return "", err
+// checkUserToken - checks if token exists for specified user.
+// Removes token if it is expired. Returns an error if active token is present.
+func (s *SubscriptionManager) checkUserToken(userID string, tokenType models.TokenType) error {
+	token, err := s.tokenState.GetTokenByUserIDAndType(userID, tokenType)
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if token.ExpiryAt.Before(time.Now()) {
+		return errors.New("token already exists")
+	}
+	err = s.tokenState.RemoveToken(token)
+	if err != nil {
+		return err
 	}
 
-	for i := 0; i < emailValidationCodeLength; i++ {
-		codes[i] = 48 + (codes[i] % 10)
-	}
-
-	return string(codes), nil
+	return nil
 }

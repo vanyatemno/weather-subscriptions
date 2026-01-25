@@ -5,7 +5,7 @@ import (
 	weatherHandlers "weather-subscriptions/api/handlers/weather"
 	"weather-subscriptions/internal/config"
 	"weather-subscriptions/internal/integrations/google"
-	"weather-subscriptions/internal/mail/mailer_service"
+	"weather-subscriptions/internal/mail"
 	"weather-subscriptions/internal/state"
 )
 
@@ -14,9 +14,13 @@ type RequestHandler struct {
 	SubscriptionHandler *subscriptionHandlers.SubscriptionHandler
 }
 
-func New(cfg *config.Config, state state.Stateful, mailer mailer_service.MailerService) *RequestHandler {
+func New(cfg *config.Config, state *state.State, mailer mail.MailerService) *RequestHandler {
 	googleInt := google.New(cfg)
-	weatherHandler := weatherHandlers.NewWeatherHandler(googleInt, state)
+	weatherHandler := weatherHandlers.NewWeatherHandler(
+		googleInt,
+		state,
+		state,
+	)
 	subscriptionHandler := subscriptionHandlers.NewSubscriptionHandler(cfg, state, mailer, googleInt)
 	return &RequestHandler{weatherHandler, subscriptionHandler}
 }

@@ -2,9 +2,10 @@ package routes
 
 import (
 	"github.com/gofiber/fiber/v2"
+
 	"weather-subscriptions/api/handlers"
 	"weather-subscriptions/internal/config"
-	"weather-subscriptions/internal/mail/mailer_service"
+	"weather-subscriptions/internal/mail"
 	"weather-subscriptions/internal/state"
 )
 
@@ -12,7 +13,7 @@ type Routes struct {
 	handler *handlers.RequestHandler
 }
 
-func New(cfg *config.Config, state state.Stateful, mailer mailer_service.MailerService) *Routes {
+func New(cfg *config.Config, state *state.State, mailer mail.MailerService) *Routes {
 	handler := handlers.New(cfg, state, mailer)
 	return &Routes{handler}
 }

@@ -3,42 +3,40 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/gofiber/fiber/v2/middleware/cors"
-	"go.uber.org/zap"
 	"os/signal"
 	"syscall"
 	"time"
+
 	"weather-subscriptions/api/routes"
 	"weather-subscriptions/internal/advises"
+	"weather-subscriptions/internal/config"
+	"weather-subscriptions/internal/db"
 	"weather-subscriptions/internal/integrations/openai"
 	"weather-subscriptions/internal/mail"
-	"weather-subscriptions/internal/mail/mailer_service"
 	"weather-subscriptions/internal/state"
 
 	"github.com/go-co-op/gocron"
 	"github.com/gofiber/fiber/v2"
-	"weather-subscriptions/internal/config"
-	"weather-subscriptions/internal/db"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"go.uber.org/zap"
 )
 
 var (
 	webApp *fiber.App
-	appCtx context.Context
 )
 
 func main() {
-	var cancel context.CancelFunc
-	appCtx, cancel = signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	appCtx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	zap.ReplaceGlobals(zap.Must(zap.NewProduction()))
+	zap.ReplaceGlobals(zap.Must(zap.NewDevelopment()))
 
 	cfg, err := config.Read()
 	if err != nil {
 		panic(fmt.Sprintf("failed to read config: %v", err))
 	}
 
-	mailerService := mailer_service.New(cfg)
+	mailerService := mail.NewMailerService(cfg)
 
 	database, err := db.Connect(cfg)
 	if err != nil {
@@ -49,7 +47,7 @@ func main() {
 	openaiService := openai.NewOpenAIService(cfg)
 	advisesService := advises.NewAdvisesService(set, openaiService)
 
-	scheduler := createScheduler(cfg, set, mailerService, advisesService)
+	scheduler := createScheduler(appCtx, cfg, set, mailerService, advisesService)
 
 	scheduler.StartAsync()
 	go createWebserver(cfg, set, mailerService)
@@ -60,12 +58,16 @@ func main() {
 	}
 }
 
-func createWebserver(cfg *config.Config, set state.Stateful, mailer mailer_service.MailerService) {
+func createWebserver(cfg *config.Config, set *state.State, mailer mail.MailerService) {
 	webApp = fiber.New()
 
-	webApp.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-	}))
+	webApp.Use(
+		cors.New(
+			cors.Config{
+				AllowOrigins: "*",
+			},
+		),
+	)
 
 	routes.New(cfg, set, mailer).Setup(webApp)
 	if err := webApp.Listen(":" + cfg.Port); err != nil {
@@ -74,12 +76,22 @@ func createWebserver(cfg *config.Config, set state.Stateful, mailer mailer_servi
 }
 
 func createScheduler(
+	ctx context.Context,
 	cfg *config.Config,
-	state state.Stateful,
-	mailer mailer_service.MailerService,
+	state *state.State,
+	mailer mail.MailerService,
 	advises *advises.AdvisesService,
 ) *gocron.Scheduler {
-	mailManager := mail.New(appCtx, cfg, state, mailer, advises)
+	mailManager := mail.New(
+		ctx,
+		cfg,
+		state,
+		state,
+		state,
+		state,
+		mailer,
+		advises,
+	)
 	scheduler := gocron.NewScheduler(time.UTC)
 
 	_, err := scheduler.Every(1).Hour().Do(mailManager.SendHourly)

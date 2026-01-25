@@ -3,11 +3,13 @@ package google
 import (
 	"context"
 	"errors"
-	"github.com/go-resty/resty/v2"
-	"github.com/google/uuid"
 	"net/url"
 	"time"
+
 	"weather-subscriptions/internal/db/models"
+
+	"github.com/go-resty/resty/v2"
+	"github.com/google/uuid"
 )
 
 const weatherURL = "https://weather.googleapis.com/v1/currentConditions:lookup"
@@ -42,7 +44,7 @@ func (g *Google) fetchWeatherForCity(ctx context.Context, city *models.City) (*m
 func (g *Google) getQuery(city *models.City) string {
 	query := url.Values{}
 	cityCoordinates := city.GetStringCoordinates()
-	query.Set("key", g.cfg.GoogleMapsApiKey)
+	query.Set("key", g.cfg.GoogleMapsAPIKey)
 	query.Set("location.latitude", cityCoordinates.Lat)
 	query.Set("location.longitude", cityCoordinates.Long)
 

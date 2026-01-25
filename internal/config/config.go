@@ -2,15 +2,15 @@ package config
 
 type Config struct {
 	DNS              string   `mapstructure:"DNS" json:"DNS" yaml:"DNS"`
-	Database         database `mapstructure:"DATABASE" json:"DATABASE" yaml:"DATABASE"`
+	Database         Database `mapstructure:"DATABASE" json:"DATABASE" yaml:"DATABASE"`
 	Port             string   `mapstructure:"PORT" yaml:"PORT" json:"PORT" default:"3000"`
 	FrontendURL      string   `mapstructure:"FRONTEND_URL" yaml:"FRONTEND_URL"`
-	GoogleMapsApiKey string   `mapstructure:"GOOGLE_MAPS_API_KEY" json:"GOOGLE_MAPS_API_KEY" yaml:"GOOGLE_MAPS_API_KEY"`
+	GoogleMapsAPIKey string   `mapstructure:"GOOGLE_MAPS_API_KEY" json:"GOOGLE_MAPS_API_KEY" yaml:"GOOGLE_MAPS_API_KEY"`
 	Mailer           mailer   `mapstructure:"MAILER" json:"MAILER" yaml:"MAILER"`
 	OpenAI           OpenAI   `mapstructure:"OPENAI" json:"OPENAI" yaml:"OPENAI"`
 }
 
-type database struct {
+type Database struct {
 	Name     string `mapstructure:"NAME" yaml:"NAME"`
 	Host     string `mapstructure:"HOST" yaml:"HOST"`
 	User     string `mapstructure:"USER" yaml:"USER"`

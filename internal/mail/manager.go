@@ -4,17 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.uber.org/zap"
-	"gorm.io/gorm"
 	"strings"
 	"sync"
 	"time"
+
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+
 	"weather-subscriptions/internal/advises"
 	"weather-subscriptions/internal/config"
 	"weather-subscriptions/internal/db/models"
 	"weather-subscriptions/internal/integrations"
 	"weather-subscriptions/internal/integrations/google"
-	mail "weather-subscriptions/internal/mail/mailer_service"
 	"weather-subscriptions/internal/state"
 	"weather-subscriptions/internal/templates"
 )
@@ -30,15 +31,18 @@ type MailManager interface {
 type Manager struct {
 	ctx                context.Context
 	cfg                *config.Config
-	state              state.Stateful
-	mailer             mail.MailerService
+	subscriptionState  state.SubscriptionsState
+	weatherState       state.WeatherState
+	citiesState        state.CitiesState
+	tokenState         state.TokensState
+	mailer             MailerService
 	weatherIntegration integrations.MapsIntegration
 	advisesService     *advises.AdvisesService
 }
 
 // SendHourly sends email with current weather information to users with "hourly" subscription
 func (m *Manager) SendHourly() error {
-	subscriptions, err := m.state.GetSubscriptions(models.HOURLY)
+	subscriptions, err := m.subscriptionState.GetSubscriptions(models.HOURLY)
 	if err != nil {
 		zap.L().Error("failed to get subscriptions", zap.Error(err))
 		return err
@@ -55,12 +59,26 @@ func (m *Manager) SendHourly() error {
 
 // SendDaily sends email with current weather information to users with "daily" subscription
 func (m *Manager) SendDaily() error {
-	subscriptions, err := m.state.GetSubscriptions(models.DAILY)
+	subscriptions, err := m.subscriptionState.GetSubscriptions(models.DAILY)
 	if err != nil {
 		return err
 	}
 
 	err = m.sendMail(subscriptions, models.DAILY)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Manager) SendNotification(subscriptionType models.SubscriptionType) error {
+	subscriptions, err := m.subscriptionState.GetSubscriptions(subscriptionType)
+	if err != nil {
+		return err
+	}
+
+	err = m.sendMail(subscriptions, subscriptionType)
 	if err != nil {
 		return err
 	}
@@ -76,7 +94,7 @@ func (m *Manager) sendMail(subscriptions []*models.Subscription, subType models.
 			zap.L().Error("failed to get weather for subscription", zap.Error(err))
 			return err
 		}
-		unsubToken, err := m.state.GetUnsubToken(subscriptions[i].User.ID)
+		unsubToken, err := m.tokenState.GetUnsubToken(subscriptions[i].User.ID)
 		if err != nil {
 			zap.L().Error("failed to get unsub token", zap.Error(err))
 			return err
@@ -90,9 +108,9 @@ func (m *Manager) sendMail(subscriptions []*models.Subscription, subType models.
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			err = m.mailer.Send(mail.MailMessage{
+			err = m.mailer.Send(MailMessage{
 				To:      []string{subscriptions[i].User.Email},
-				Subject: fmt.Sprintf("Your %s weather", strings.ToLower(string(subType))),
+				Subject: fmt.Sprintf("Your %s weather", strings.ToLower(subType)),
 				Body:    templates.GetWeatherEmailBody(weather, m.cfg.FrontendURL, unsubToken.Token, advise),
 			})
 			if err != nil {
@@ -106,12 +124,12 @@ func (m *Manager) sendMail(subscriptions []*models.Subscription, subType models.
 }
 
 func (m *Manager) getWeatherForSubscription(subscription *models.Subscription) (*models.Weather, error) {
-	weather, err := m.state.GetWeather(subscription.User.CityID)
+	weather, err := m.weatherState.GetWeather(subscription.User.CityID)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
 	if weather == nil || weather.Time.Before(time.Now().Add(-weatherLifetime)) {
-		city, err := m.state.GetCityByID(subscription.User.CityID)
+		city, err := m.citiesState.GetCityByID(subscription.User.CityID)
 		if err != nil {
 			return nil, err
 		}
@@ -127,14 +145,20 @@ func (m *Manager) getWeatherForSubscription(subscription *models.Subscription) (
 func New(
 	ctx context.Context,
 	cfg *config.Config,
-	state state.Stateful,
-	mailer mail.MailerService,
+	subscriptionState state.SubscriptionsState,
+	weatherState state.WeatherState,
+	citiesState state.CitiesState,
+	tokenState state.TokensState,
+	mailer MailerService,
 	advisesService *advises.AdvisesService,
 ) MailManager {
 	googleInt := google.New(cfg)
 	return &Manager{
 		cfg:                cfg,
-		state:              state,
+		subscriptionState:  subscriptionState,
+		weatherState:       weatherState,
+		citiesState:        citiesState,
+		tokenState:         tokenState,
 		mailer:             mailer,
 		ctx:                ctx,
 		weatherIntegration: googleInt,

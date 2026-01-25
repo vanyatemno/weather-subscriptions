@@ -3,11 +3,13 @@ package openai
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 
 	"github.com/invopop/jsonschema"
 	"github.com/openai/openai-go"
+	"go.uber.org/zap"
 )
 
 const generationModel = "openai/gpt-5.2:online"
@@ -23,24 +25,65 @@ func (o *OpenAIService) GeneratePlainResponse(ctx context.Context, prompt string
 		},
 	)
 	if err != nil {
+		zap.L().Error("failed to generate plain response", zap.Error(err))
 		return "", err
 	}
 
 	if len(res.Choices) == 0 {
-		return "", fmt.Errorf("generation request returned no choices")
+		zap.L().Error("No choices found", zap.String("prompt", prompt))
+		return "", errors.New("generation request returned no choices")
 	}
 
 	return res.Choices[0].Message.Content, nil
 }
 
 func (o *OpenAIService) GenerateStructuredResponse(ctx context.Context, prompt string, dest any) error {
+	responseFormat, err := getResponseFormat(dest)
+	if err != nil {
+		zap.L().Error("Failed to get response format", zap.Error(err))
+	}
+
+	chatParams := openai.ChatCompletionNewParams{
+		Messages: []openai.ChatCompletionMessageParamUnion{
+			openai.UserMessage(prompt),
+		},
+		Model:          generationModel,
+		ResponseFormat: *responseFormat,
+	}
+
+	completion, err := o.client.Chat.Completions.New(ctx, chatParams)
+	if err != nil {
+		zap.L().Error("Failed to create completion", zap.Error(err))
+		return fmt.Errorf("openai completion error: %w", err)
+	}
+
+	choice := completion.Choices[0]
+	if choice.Message.Refusal != "" {
+		zap.L().Error("Failed to create completion", zap.Any("choice", choice))
+		return fmt.Errorf("model refused to generate response: %s", choice.Message.Refusal)
+	}
+
+	content := choice.Message.Content
+	if content == "" {
+		zap.L().Error("Failed to create completion", zap.Any("choice", choice))
+		return errors.New("received empty content from model")
+	}
+
+	if err = json.Unmarshal([]byte(content), dest); err != nil {
+		zap.L().Error("Failed to create completion", zap.Any("choice", choice), zap.Error(err))
+		return fmt.Errorf("failed to unmarshal structured response: %w", err)
+	}
+
+	return nil
+}
+
+func getResponseFormat(dest any) (*openai.ChatCompletionNewParamsResponseFormatUnion, error) {
 	val := reflect.ValueOf(dest)
-	if val.Kind() != reflect.Ptr || val.IsNil() {
-		return fmt.Errorf("dest must be a non-nil pointer")
+	if val.Kind() != reflect.Ptr && !val.IsNil() && val.Elem().Kind() == reflect.Struct {
+		return nil, errors.New("dest must be a non-nil pointer to a struct")
 	}
 
 	elemType := val.Type().Elem()
-
 	schemaName := elemType.Name()
 	if schemaName == "" {
 		schemaName = "StructuredResponse"
@@ -52,43 +95,6 @@ func (o *OpenAIService) GenerateStructuredResponse(ctx context.Context, prompt s
 		Description: fmt.Sprintf("Generate a valid %s object based on the prompt.", schemaName),
 	}
 
-	responseFormat := getResponseFormat(params)
-
-	chatParams := openai.ChatCompletionNewParams{
-		Messages: []openai.ChatCompletionMessageParamUnion{
-			openai.UserMessage(prompt),
-		},
-		Model:          generationModel,
-		ResponseFormat: responseFormat,
-	}
-
-	// 4. Execute the request
-	completion, err := o.client.Chat.Completions.New(ctx, chatParams)
-	if err != nil {
-		return fmt.Errorf("openai completion error: %w", err)
-	}
-
-	// 5. Check for refusal or empty content
-	choice := completion.Choices[0]
-	if choice.Message.Refusal != "" {
-		return fmt.Errorf("model refused to generate response: %s", choice.Message.Refusal)
-	}
-
-	content := choice.Message.Content
-	if content == "" {
-		return fmt.Errorf("received empty content from model")
-	}
-
-	// 6. Unmarshal result into dest
-	// The model is guaranteed to return valid JSON matching the schema because Strict: true is set
-	if err := json.Unmarshal([]byte(content), dest); err != nil {
-		return fmt.Errorf("failed to unmarshal structured response: %w", err)
-	}
-
-	return nil
-}
-
-func getResponseFormat(params *schemaParams) openai.ChatCompletionNewParamsResponseFormatUnion {
 	schema := generateSchema(params.Type)
 
 	schemaParam := openai.ResponseFormatJSONSchemaJSONSchemaParam{
@@ -98,14 +104,12 @@ func getResponseFormat(params *schemaParams) openai.ChatCompletionNewParamsRespo
 		Strict:      openai.Bool(true),
 	}
 
-	return openai.ChatCompletionNewParamsResponseFormatUnion{
+	return &openai.ChatCompletionNewParamsResponseFormatUnion{
 		OfJSONSchema: &openai.ResponseFormatJSONSchemaParam{JSONSchema: schemaParam},
-	}
+	}, nil
 }
 
 func generateSchema(t reflect.Type) interface{} {
-	// Structured Outputs uses a subset of JSON schema
-	// These flags are necessary to comply with the subset
 	reflector := jsonschema.Reflector{
 		AllowAdditionalProperties: false,
 		DoNotReference:            true,

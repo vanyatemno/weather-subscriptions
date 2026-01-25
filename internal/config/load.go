@@ -1,11 +1,11 @@
 package config
 
 import (
-	"github.com/joho/godotenv"
 	"os"
 	"reflect"
 	"strings"
 
+	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 )
@@ -53,7 +53,7 @@ func read(config any, opts ...viper.DecoderConfigOption) error {
 	return nil
 }
 
-// setDefaults sets default values for struct fields based using value from default tag
+// setDefaults - sets default values for struct fields based using value from default tag
 func setDefaults(parentName string, vip *viper.Viper, t reflect.StructField, v reflect.Value) error {
 	if v.Kind() == reflect.Struct {
 		value, ok := t.Tag.Lookup(mapStructureTagName)

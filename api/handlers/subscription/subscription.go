@@ -4,9 +4,10 @@ import (
 	"github.com/go-playground/validator"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gosimple/slug"
+
 	"weather-subscriptions/internal/config"
 	"weather-subscriptions/internal/integrations"
-	"weather-subscriptions/internal/mail/mailer_service"
+	"weather-subscriptions/internal/mail"
 	"weather-subscriptions/internal/state"
 	"weather-subscriptions/internal/subscriptions"
 )
@@ -17,11 +18,19 @@ type SubscriptionHandler struct {
 
 func NewSubscriptionHandler(
 	cfg *config.Config,
-	state state.Stateful,
-	mailer mailer_service.MailerService,
+	state *state.State,
+	mailer mail.MailerService,
 	integration integrations.MapsIntegration,
 ) *SubscriptionHandler {
-	manager := subscriptions.New(cfg, state, mailer, integration)
+	manager := subscriptions.New(
+		cfg,
+		state,
+		state,
+		state,
+		state,
+		mailer,
+		integration,
+	)
 	return &SubscriptionHandler{
 		manager: manager,
 	}
