@@ -6,9 +6,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gosimple/slug"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"go.uber.org/zap"
 	"weather-subscriptions/internal/config"
 	"weather-subscriptions/internal/db/models"
 	"weather-subscriptions/internal/integrations"

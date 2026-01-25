@@ -94,7 +94,7 @@ func (m *Manager) sendMail(subscriptions []*models.Subscription, subType models.
 			zap.L().Error("failed to get weather for subscription", zap.Error(err))
 			return err
 		}
-		unsubToken, err := m.tokenState.GetUnsubToken(subscriptions[i].User.ID)
+		unsubToken, err := m.tokenState.GetTokenByUserIDAndType(subscriptions[i].User.ID, models.Unsub)
 		if err != nil {
 			zap.L().Error("failed to get unsub token", zap.Error(err))
 			return err

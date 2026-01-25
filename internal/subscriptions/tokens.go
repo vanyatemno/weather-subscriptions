@@ -25,6 +25,7 @@ func (s *SubscriptionManager) verifyToken(token string) (*models.Token, error) {
 	return foundToken, nil
 }
 
+// createToken - creates a token of specified type for specified user
 func (s *SubscriptionManager) createToken(
 	userID string,
 	tokenType models.TokenType,
