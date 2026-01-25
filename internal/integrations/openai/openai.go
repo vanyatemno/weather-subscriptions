@@ -2,8 +2,8 @@ package openai
 
 import (
 	"github.com/openai/openai-go"
-	"github.com/openai/openai-go/option"
 
+	"github.com/openai/openai-go/option"
 	"weather-subscriptions/internal/config"
 )
 

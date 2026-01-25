@@ -9,3 +9,6 @@ build:
 
 lint:
 	$(GO_PATH)/bin/golangci-lint run --timeout=5m -c .golangci.yml
+
+lint-staged:
+	$(GO_PATH)/bin/golangci-lint run --timeout=5m -c .golangci.yml $(FILES)

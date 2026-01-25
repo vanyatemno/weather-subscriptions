@@ -16,6 +16,10 @@ type SubscriptionHandler struct {
 	manager subscriptions.SubManager
 }
 
+type SubscribeResponse struct {
+	Message string `json:"message" example:"confirmation email sent"`
+}
+
 func NewSubscriptionHandler(
 	cfg *config.Config,
 	state *state.State,
@@ -37,6 +41,16 @@ func NewSubscriptionHandler(
 }
 
 // HandleSubscribe handles the POST /subscribe endpoint
+// @Summary Subscribe to weather updates
+// @Description Subscribe an email to receive weather updates for a specific city and frequency.
+// @Tags subscriptions
+// @Accept json
+// @Produce json
+// @Param request body subscriptions.SubscribeRequest true "Subscription request"
+// @Success 200 {object} SubscribeResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 409 {object} ErrorResponse
+// @Router /subscribe [post]
 func (sh *SubscriptionHandler) HandleSubscribe(c *fiber.Ctx) error {
 	var request subscriptions.SubscribeRequest
 	err := c.BodyParser(&request)
@@ -62,6 +76,14 @@ func (sh *SubscriptionHandler) HandleSubscribe(c *fiber.Ctx) error {
 }
 
 // HandleConfirmSubscription handles the POST /confirm/{token} endpoint
+// @Summary Confirm email subscription
+// @Description Confirms a subscription using the token sent in the confirmation email.
+// @Tags subscriptions
+// @Param token path string true "Confirmation token"
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /confirm/{token} [get]
 func (sh *SubscriptionHandler) HandleConfirmSubscription(c *fiber.Ctx) error {
 	token := c.Params("token")
 	if token == "" {
@@ -79,6 +101,14 @@ func (sh *SubscriptionHandler) HandleConfirmSubscription(c *fiber.Ctx) error {
 }
 
 // HandleUnsubscribe handles the POST /unsubscribe/{token} endpoint
+// @Summary Unsubscribe from weather updates
+// @Description Unsubscribes an email from weather updates using the token sent in emails.
+// @Tags subscriptions
+// @Param token path string true "Unsubscribe token"
+// @Success 200 {string} string "OK"
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /unsubscribe/{token} [get]
 func (sh *SubscriptionHandler) HandleUnsubscribe(c *fiber.Ctx) error {
 	token := c.Params("token")
 	if token == "" {

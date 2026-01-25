@@ -1,163 +1,157 @@
-swagger: "2.0"
+basePath: /
+definitions:
+  handlers.ErrorResponse:
+    properties:
+      error:
+        example: city name is required
+        type: string
+    type: object
+  handlers.SubscribeResponse:
+    properties:
+      message:
+        example: confirmation email sent
+        type: string
+    type: object
+  handlers.WeatherResponse:
+    properties:
+      description:
+        example: partly cloudy
+        type: string
+      humidity:
+        example: 64
+        type: number
+      temperature:
+        example: 21.5
+        type: number
+    type: object
+  subscriptions.SubscribeRequest:
+    properties:
+      city:
+        type: string
+      email:
+        type: string
+      frequency:
+        type: string
+    required:
+    - city
+    - email
+    - frequency
+    type: object
+host: localhost:3000
 info:
-  description: "Weather API application that allows users to subscribe to weather updates for their city."
-  version: "1.0.0"
-  title: "Weather Forecast API"
-host: "weatherapi.app"
-basePath: "/api"
-tags:
-  - name: "weather"
-    description: "Weather forecast operations"
-  - name: "subscription"
-    description: "Subscription management operations"
-schemes:
-  - "http"
-  - "https"
+  contact: {}
+  description: API for managing weather subscriptions and fetching weather data.
+  title: Weather Subscriptions API
+  version: "1.0"
 paths:
-  /weather:
-    get:
-      tags:
-        - "weather"
-      summary: "Get current weather for a city"
-      description: "Returns the current weather forecast for the specified city using WeatherAPI.com."
-      operationId: "getWeather"
-      parameters:
-        - name: "city"
-          in: "query"
-          description: "City name for weather forecast"
-          required: true
-          type: "string"
-      produces:
-        - "application/json"
-      responses:
-        "200":
-          description: "Successful operation - current weather forecast returned"
-          schema:
-            type: "object"
-            properties:
-              temperature:
-                type: "number"
-                description: "Current temperature"
-              humidity:
-                type: "number"
-                description: "Current humidity percentage"
-              description:
-                type: "string"
-                description: "Weather description"
-        "400":
-          description: "Invalid request"
-        "404":
-          description: "City not found"
-  /subscribe:
-    post:
-      tags:
-        - "subscription"
-      summary: "Subscribe to weather updates"
-      description: "Subscribe an email to receive weather updates for a specific city with chosen frequency."
-      operationId: "subscribe"
-      consumes:
-        - "application/json"
-        - "application/x-www-form-urlencoded"
-      produces:
-        - "application/json"
-      parameters:
-        - name: "email"
-          in: "formData"
-          description: "Email address to subscribe"
-          required: true
-          type: "string"
-        - name: "city"
-          in: "formData"
-          description: "City for weather updates"
-          required: true
-          type: "string"
-        - name: "frequency"
-          in: "formData"
-          description: "Frequency of updates (hourly or daily)"
-          required: true
-          type: "string"
-          enum: ["hourly", "daily"]
-      responses:
-        "200":
-          description: "Subscription successful. Confirmation email sent."
-        "400":
-          description: "Invalid input"
-        "409":
-          description: "Email already subscribed"
   /confirm/{token}:
     get:
-      tags:
-        - "subscription"
-      summary: "Confirm email subscription"
-      description: "Confirms a subscription using the token sent in the confirmation email."
-      operationId: "confirmSubscription"
+      description: Confirms a subscription using the token sent in the confirmation
+        email.
       parameters:
-        - name: "token"
-          in: "path"
-          description: "Confirmation token"
-          required: true
-          type: "string"
-      produces:
-        - "application/json"
+      - description: Confirmation token
+        in: path
+        name: token
+        required: true
+        type: string
       responses:
         "200":
-          description: "Subscription confirmed successfully"
+          description: OK
+          schema:
+            type: string
         "400":
-          description: "Invalid token"
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
         "404":
-          description: "Token not found"
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Confirm email subscription
+      tags:
+      - subscriptions
+  /subscribe:
+    post:
+      consumes:
+      - application/json
+      description: Subscribe an email to receive weather updates for a specific city
+        and frequency.
+      parameters:
+      - description: Subscription request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/subscriptions.SubscribeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.SubscribeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Subscribe to weather updates
+      tags:
+      - subscriptions
   /unsubscribe/{token}:
     get:
-      tags:
-        - "subscription"
-      summary: "Unsubscribe from weather updates"
-      description: "Unsubscribes an email from weather updates using the token sent in emails."
-      operationId: "unsubscribe"
+      description: Unsubscribes an email from weather updates using the token sent
+        in emails.
       parameters:
-        - name: "token"
-          in: "path"
-          description: "Unsubscribe token"
-          required: true
-          type: "string"
-      produces:
-        - "application/json"
+      - description: Unsubscribe token
+        in: path
+        name: token
+        required: true
+        type: string
       responses:
         "200":
-          description: "Unsubscribed successfully"
+          description: OK
+          schema:
+            type: string
         "400":
-          description: "Invalid token"
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
         "404":
-          description: "Token not found"
-definitions:
-  Weather:
-    type: "object"
-    properties:
-      temperature:
-        type: "number"
-        description: "Current temperature"
-      humidity:
-        type: "number"
-        description: "Current humidity percentage"
-      description:
-        type: "string"
-        description: "Weather description"
-  Subscription:
-    type: "object"
-    required:
-      - "email"
-      - "city"
-      - "frequency"
-    properties:
-      email:
-        type: "string"
-        description: "Email address"
-      city:
-        type: "string"
-        description: "City for weather updates"
-      frequency:
-        type: "string"
-        description: "Frequency of updates"
-        enum: ["hourly", "daily"]
-      confirmed:
-        type: "boolean"
-        description: "Whether the subscription is confirmed"
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Unsubscribe from weather updates
+      tags:
+      - subscriptions
+  /weather:
+    get:
+      description: Returns the current weather forecast for the specified city.
+      parameters:
+      - description: City name
+        in: query
+        name: city
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.WeatherResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get current weather for a city
+      tags:
+      - weather
+schemes:
+- http
+swagger: "2.0"

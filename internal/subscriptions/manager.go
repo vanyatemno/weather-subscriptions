@@ -3,16 +3,16 @@ package subscriptions
 import (
 	"context"
 	"errors"
-	"weather-subscriptions/internal/mail"
 
 	"github.com/google/uuid"
 	"github.com/gosimple/slug"
-	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"go.uber.org/zap"
 	"weather-subscriptions/internal/config"
 	"weather-subscriptions/internal/db/models"
 	"weather-subscriptions/internal/integrations"
+	"weather-subscriptions/internal/mail"
 	"weather-subscriptions/internal/state"
 	"weather-subscriptions/internal/templates"
 )

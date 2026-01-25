@@ -17,6 +17,16 @@ type WeatherHandler struct {
 	citiesState  state.CitiesState
 }
 
+type WeatherResponse struct {
+	Temperature float64 `json:"temperature" example:"21.5"`
+	Humidity    float64 `json:"humidity" example:"64"`
+	Description string  `json:"description" example:"partly cloudy"`
+}
+
+type ErrorResponse struct {
+	Error string `json:"error" example:"city name is required"`
+}
+
 func NewWeatherHandler(
 	googleInt integrations.MapsIntegration,
 	weatherState state.WeatherState,
@@ -29,6 +39,15 @@ func NewWeatherHandler(
 	}
 }
 
+// GetWeather godoc
+// @Summary Get current weather for a city
+// @Description Returns the current weather forecast for the specified city.
+// @Tags weather
+// @Param city query string true "City name"
+// @Success 200 {object} WeatherResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /weather [get]
 func (wh *WeatherHandler) GetWeather(c *fiber.Ctx) error {
 	cityName := c.Query("city")
 	if cityName == "" {

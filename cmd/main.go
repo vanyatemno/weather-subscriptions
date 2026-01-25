@@ -25,6 +25,12 @@ var (
 	webApp *fiber.App
 )
 
+// @title Weather Subscriptions API
+// @version 1.0
+// @description API for managing weather subscriptions and fetching weather data.
+// @host localhost:3000
+// @BasePath /
+// @schemes http
 func main() {
 	appCtx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
