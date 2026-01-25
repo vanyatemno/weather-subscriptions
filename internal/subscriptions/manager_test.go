@@ -116,11 +116,11 @@ func (m *mapsIntegrationMock) GetCity(ctx context.Context, cityName string) (*mo
 }
 
 type mailerMock struct {
-	sendFunc func(message mail.MailMessage) error
-	sent     []mail.MailMessage
+	sendFunc func(message mail.Message) error
+	sent     []mail.Message
 }
 
-func (m *mailerMock) Send(message mail.MailMessage) error {
+func (m *mailerMock) Send(message mail.Message) error {
 	m.sent = append(m.sent, message)
 	if m.sendFunc == nil {
 		return nil
@@ -379,7 +379,7 @@ func TestInviteUser(t *testing.T) {
 			},
 			mapsIntegration: &mapsIntegrationMock{},
 			mailer: &mailerMock{
-				sendFunc: func(message mail.MailMessage) error {
+				sendFunc: func(message mail.Message) error {
 					return errors.New("send")
 				},
 			},

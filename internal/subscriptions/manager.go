@@ -113,7 +113,7 @@ func (s *SubscriptionManager) InviteUser(ctx context.Context, request SubscribeR
 		return err
 	}
 
-	err = s.mailer.Send(mail.MailMessage{
+	err = s.mailer.Send(mail.Message{
 		To:      []string{user.Email},
 		Subject: "Confirmation code",
 		Body:    templates.GetVerificationEmailTemplate(s.cfg.FrontendURL, token.Token),

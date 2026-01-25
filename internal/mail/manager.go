@@ -86,6 +86,7 @@ func (m *Manager) SendNotification(subscriptionType models.SubscriptionType) err
 	return nil
 }
 
+// sendMail - forms an email and sends it to the list of users
 func (m *Manager) sendMail(subscriptions []*models.Subscription, subType models.SubscriptionType) error {
 	wg := sync.WaitGroup{}
 	for i := range subscriptions {
@@ -108,7 +109,7 @@ func (m *Manager) sendMail(subscriptions []*models.Subscription, subType models.
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			err = m.mailer.Send(MailMessage{
+			err = m.mailer.Send(Message{
 				To:      []string{subscriptions[i].User.Email},
 				Subject: fmt.Sprintf("Your %s weather", strings.ToLower(subType)),
 				Body:    templates.GetWeatherEmailBody(weather, m.cfg.FrontendURL, unsubToken.Token, advise),
@@ -123,6 +124,8 @@ func (m *Manager) sendMail(subscriptions []*models.Subscription, subType models.
 	return nil
 }
 
+// getWeatherForSubscription - finds a weather record in database for user of some subscription, if no one found,
+// fetches it from appropriate integration.
 func (m *Manager) getWeatherForSubscription(subscription *models.Subscription) (*models.Weather, error) {
 	weather, err := m.weatherState.GetWeather(subscription.User.CityID)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -142,7 +145,7 @@ func (m *Manager) getWeatherForSubscription(subscription *models.Subscription) (
 	return weather, nil
 }
 
-func New(
+func NewManager(
 	ctx context.Context,
 	cfg *config.Config,
 	subscriptionState state.SubscriptionsState,

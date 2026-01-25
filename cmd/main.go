@@ -92,7 +92,7 @@ func createScheduler(
 	mailer mail.MailerService,
 	advises *advises.AdvisesService,
 ) *gocron.Scheduler {
-	mailManager := mail.New(
+	mailManager := mail.NewManager(
 		ctx,
 		cfg,
 		state,

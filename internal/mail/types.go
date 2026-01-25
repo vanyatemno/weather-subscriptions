@@ -9,9 +9,9 @@ type SMTPConfig struct {
 	From     string
 }
 
-// MailMessage represents an email message.
+// Message represents an email message.
 // It contains all necessary fields for constructing and sending an email.
-type MailMessage struct {
+type Message struct {
 	To      []string
 	Subject string
 	Body    string

@@ -7,7 +7,7 @@ import (
 )
 
 type MailerService interface {
-	Send(message MailMessage) error
+	Send(message Message) error
 }
 
 type Mailer struct {
@@ -18,7 +18,7 @@ func NewMailerService(cfg *config.Config) MailerService {
 	return &Mailer{cfg: cfg}
 }
 
-func (m *Mailer) Send(message MailMessage) error {
+func (m *Mailer) Send(message Message) error {
 	client := gomail.NewDialer(m.cfg.Mailer.SMTP, m.cfg.Mailer.Port, m.cfg.Mailer.From, m.cfg.Mailer.Password)
 
 	msg := gomail.NewMessage()

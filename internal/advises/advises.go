@@ -89,20 +89,20 @@ func (a *AdvisesService) GetAdvise(
 				Description: advises[i].Description,
 			})
 		}
-	}
+	} else {
+		err = a.provider.GenerateStructuredResponse(ctx, buildPrompt(weather), &res)
+		if err != nil {
+			zap.L().Error("Failed to generate structured response", zap.Error(err))
+			return nil, err
+		}
+		// remove links provided by AI as a default
+		cleanupResponse(&res)
 
-	err = a.provider.GenerateStructuredResponse(ctx, buildPrompt(weather), &res)
-	if err != nil {
-		zap.L().Error("Failed to generate structured response", zap.Error(err))
-		return nil, err
-	}
-	// remove links provided by AI as a default
-	cleanupResponse(&res)
-
-	err = a.saveAdvise(&res, weather)
-	if err != nil {
-		zap.L().Error("Failed to save structured response", zap.Error(err))
-		return nil, err
+		err = a.saveAdvise(&res, weather)
+		if err != nil {
+			zap.L().Error("Failed to save structured response", zap.Error(err))
+			return nil, err
+		}
 	}
 
 	return &res, nil
