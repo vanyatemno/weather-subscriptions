@@ -6,7 +6,7 @@ type Config struct {
 	Port             string   `mapstructure:"PORT" yaml:"PORT" json:"PORT" default:"3000"`
 	FrontendURL      string   `mapstructure:"FRONTEND_URL" yaml:"FRONTEND_URL"`
 	GoogleMapsAPIKey string   `mapstructure:"GOOGLE_MAPS_API_KEY" json:"GOOGLE_MAPS_API_KEY" yaml:"GOOGLE_MAPS_API_KEY"`
-	Mailer           mailer   `mapstructure:"MAILER" json:"MAILER" yaml:"MAILER"`
+	Mailer           Mailer   `mapstructure:"MAILER" json:"MAILER" yaml:"MAILER"`
 	OpenAI           OpenAI   `mapstructure:"OPENAI" json:"OPENAI" yaml:"OPENAI"`
 }
 
@@ -17,7 +17,7 @@ type Database struct {
 	Password string `mapstructure:"PASSWORD" yaml:"PASSWORD"`
 }
 
-type mailer struct {
+type Mailer struct {
 	Host     string `mapstructure:"HOST" json:"HOST" yaml:"HOST"`
 	Port     int    `mapstructure:"PORT" json:"PORT" yaml:"PORT"`
 	Username string `mapstructure:"USERNAME" json:"USERNAME" yaml:"USERNAME"`
