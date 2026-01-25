@@ -12,3 +12,6 @@ lint:
 
 lint-staged:
 	$(GO_PATH)/bin/golangci-lint run --timeout=5m -c .golangci.yml $(FILES)
+
+swagger:
+	@swag init -g cmd/main.go

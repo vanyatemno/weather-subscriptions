@@ -37,7 +37,7 @@ definitions:
     - email
     - frequency
     type: object
-host: localhost:3000
+host: localhost:8080
 info:
   contact: {}
   description: API for managing weather subscriptions and fetching weather data.

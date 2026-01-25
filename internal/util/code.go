@@ -7,6 +7,7 @@ const (
 	base              = 10
 )
 
+// GenerateCode returns a numeric string of the requested length using crypto/rand.
 func GenerateCode(length int) (string, error) {
 	codes := make([]byte, length)
 	if _, err := rand.Read(codes); err != nil {

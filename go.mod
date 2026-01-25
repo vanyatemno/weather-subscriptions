@@ -7,6 +7,7 @@ require (
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-resty/resty/v2 v2.16.5
 	github.com/gofiber/fiber/v2 v2.52.9
+	github.com/gofiber/swagger v1.1.1
 	github.com/google/uuid v1.6.0
 	github.com/gosimple/slug v1.15.0
 	github.com/invopop/jsonschema v0.13.0
@@ -96,6 +97,7 @@ require (
 	github.com/spf13/cobra v1.10.1 // indirect
 	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
+	github.com/swaggo/files/v2 v2.0.2 // indirect
 	github.com/tidwall/gjson v1.14.4 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect

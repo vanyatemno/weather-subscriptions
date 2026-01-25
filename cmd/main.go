@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"weather-subscriptions/api/routes"
+	_ "weather-subscriptions/docs"
 	"weather-subscriptions/internal/advises"
 	"weather-subscriptions/internal/config"
 	"weather-subscriptions/internal/db"
@@ -18,6 +19,7 @@ import (
 	"github.com/go-co-op/gocron"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/swagger"
 	"go.uber.org/zap"
 )
 
@@ -28,7 +30,7 @@ var (
 // @title Weather Subscriptions API
 // @version 1.0
 // @description API for managing weather subscriptions and fetching weather data.
-// @host localhost:3000
+// @host localhost:8080
 // @BasePath /
 // @schemes http
 func main() {
@@ -74,6 +76,8 @@ func createWebserver(cfg *config.Config, set *state.State, mailer mail.MailerSer
 			},
 		),
 	)
+
+	webApp.Get("/swagger/*", swagger.HandlerDefault)
 
 	routes.New(cfg, set, mailer).Setup(webApp)
 	if err := webApp.Listen(":" + cfg.Port); err != nil {
