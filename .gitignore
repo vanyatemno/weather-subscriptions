@@ -27,3 +27,6 @@ go.work.sum
 .env
 .idea/
 client_secret_267588684098-3l7bsa6lq4kqoqq94oqhkeo3s6as3m86.apps.googleusercontent.com.json
+
+# System files
+.DS_Store
