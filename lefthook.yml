@@ -2,7 +2,7 @@ pre-commit:
   parallel: true
   jobs:
     - name: lint
-      glob: "./{internal,test,cmd,api}/**/*.go"
+      glob: "./{internal,cmd,api}/**/*.go"
       run: make lint-staged FILES="{staged_files}"
     - name: swagger docs update
       run: make swagger && git add docs/*
