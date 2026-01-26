@@ -152,6 +152,40 @@ The API routes are defined in `api/routes/routes.go`. Below is a summary of the 
 
 For a fully detailed API specification, please refer to the Swagger documentation: `docs/swagger.yaml`. You can use tools like Swagger Editor or Swagger UI to view and interact with it.
 
+## Testing
+
+This project uses three test layers with different scopes and trade-offs. Unit tests isolate domain logic, integration tests validate internal integrations, and end-to-end tests exercise the HTTP stack with a real database.
+
+### Unit Tests
+
+Run unit tests for domain logic and utility packages:
+
+```bash
+go test ./internal/subscriptions ./internal/util ./internal/advises
+```
+
+These tests use in-memory mocks and state stubs to keep feedback fast. They focus on deterministic business rules such as token validation, subscription flows, and data shaping without requiring external services.
+
+### Integration Tests
+
+Run integration tests for internal service boundaries:
+
+```bash
+go test ./internal/integrations/...
+```
+
+Integration tests cover components that connect to external providers or bridge multiple internal modules. The decision to keep them in the `internal/integrations` scope ensures the API contracts stay stable while limiting IO to the smallest possible surface area.
+
+### End-to-End Tests
+
+Run full-stack tests against Fiber with a Dockerized Postgres database:
+
+```bash
+make e2e
+```
+
+This uses the `e2e` Makefile target to bring up Postgres with Docker and runs `go test ./test/...` with the configured `DNS`. E2E tests validate the complete subscription lifecycle via HTTP requests, ensuring persistence and token flows match production behavior. The decision to rely on Docker keeps the database setup consistent with production and avoids in-memory test mismatches.
+
 ## Project Structure
 
 ```

@@ -3,6 +3,6 @@ pre-commit:
   jobs:
     - name: lint
       glob: "*.go"
-      run: golangci-lint run -c ./.golangci.yml {staged_files}
+      run: make lint-staged FILES="{staged_files}"
     - name: swagger docs update
       run: make swagger && git add docs/*
