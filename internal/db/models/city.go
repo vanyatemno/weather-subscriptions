@@ -8,10 +8,10 @@ import (
 type City struct {
 	ID string `gorm:"primaryKey;default:uuid_generate_v4()"`
 
-	Name          string  `gorm:"not null;unique"`
+	Name          string  `gorm:"index:name_google_id_unique_index,unique;not null"`
 	Longitude     float64 `gorm:"not null"`
 	Latitude      float64 `gorm:"not null"`
-	GooglePlaceID string  `gorm:"not null;unique"`
+	GooglePlaceID string  `gorm:"index:name_google_id_unique_index,unique;not null"`
 
 	Users []User `gorm:"foreignKey:CityID"`
 

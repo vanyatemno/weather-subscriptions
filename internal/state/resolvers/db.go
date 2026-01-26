@@ -55,7 +55,7 @@ func (r *DBResolver) UnsubToken(userID string) (t *models.Token, err error) {
 }
 
 func (r *DBResolver) UserToken(userID, tokenType string) (token *models.Token, err error) {
-	return token, r.db.First(&token, "user_id = ? AND token_type = ?", userID, tokenType).Error
+	return token, r.db.First(&token, "user_id = ? AND type = ?", userID, tokenType).Error
 }
 
 func (r *DBResolver) Subscription(userID string) (subscription *models.Subscription, err error) {
