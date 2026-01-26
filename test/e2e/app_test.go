@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func newTestApp() (*fiber.App, state.State) {
+func newTestApp() (*fiber.App, *state.State) {
 	cfg := newTestConfig()
 	database, err := db.Connect(cfg)
 	if err != nil {
@@ -34,7 +34,7 @@ func newTestApp() (*fiber.App, state.State) {
 	)
 	routes.New(cfg, set, mailerService).Setup(webApp)
 
-	return webApp, state
+	return webApp, set
 }
 
 func newTestConfig() *config.Config {
@@ -44,7 +44,8 @@ func newTestConfig() *config.Config {
 	}
 
 	return &config.Config{
-		DNS:              os.Getenv("DNS"),
+		DNS: "postgresql://postgres:Password1@localhost:5432/weather-subscriptions",
+		//DNS:              os.Getenv("DNS"),
 		Port:             "3000",
 		FrontendURL:      "http://example.com",
 		GoogleMapsAPIKey: "test-key",

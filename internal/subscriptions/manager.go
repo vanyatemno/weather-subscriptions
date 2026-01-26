@@ -85,15 +85,15 @@ func (s *SubscriptionManager) InviteUser(ctx context.Context, request SubscribeR
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return err
 	}
-	if user != nil {
-		return errors.New("user already exists")
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		user = &models.User{
+			ID:     uuid.Must(uuid.NewV7()).String(),
+			Email:  request.Email,
+			CityID: city.ID,
+			City:   *city,
+		}
 	}
-	user = &models.User{
-		ID:     uuid.Must(uuid.NewV7()).String(),
-		Email:  request.Email,
-		CityID: city.ID,
-		City:   *city,
-	}
+
 	err = s.usersState.SaveUser(user)
 	if err != nil {
 		zap.L().Error("error saving user", zap.Error(err))

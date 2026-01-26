@@ -90,7 +90,7 @@ func (m *Manager) SendNotification(subscriptionType models.SubscriptionType) err
 func (m *Manager) sendMail(subscriptions []*models.Subscription, subType models.SubscriptionType) error {
 	wg := sync.WaitGroup{}
 	for i := range subscriptions {
-		weather, err := m.getWeatherForSubscription(subscriptions[i])
+		weather, err := m.GetWeatherForSubscription(subscriptions[i])
 		if err != nil {
 			zap.L().Error("failed to get weather for subscription", zap.Error(err))
 			return err
@@ -124,21 +124,28 @@ func (m *Manager) sendMail(subscriptions []*models.Subscription, subType models.
 	return nil
 }
 
-// getWeatherForSubscription - finds a weather record in database for user of some subscription, if no one found,
+// GetWeatherForSubscription - finds a weather record in database for user of some subscription, if no one found,
 // fetches it from appropriate integration.
-func (m *Manager) getWeatherForSubscription(subscription *models.Subscription) (*models.Weather, error) {
+func (m *Manager) GetWeatherForSubscription(subscription *models.Subscription) (*models.Weather, error) {
 	weather, err := m.weatherState.GetWeather(subscription.User.CityID)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		zap.L().Error("failed to get weather for subscription", zap.Error(err))
 		return nil, err
 	}
 	if weather == nil || weather.Time.Before(time.Now().Add(-weatherLifetime)) {
 		city, err := m.citiesState.GetCityByID(subscription.User.CityID)
 		if err != nil {
+			zap.L().Error("failed to get weather for city", zap.Error(err))
 			return nil, err
 		}
 		weather, err = m.weatherIntegration.GetWeather(m.ctx, city)
 		if err != nil {
+			zap.L().Error("failed to get weather for subscription", zap.Error(err))
 			return nil, err
+		}
+		err = m.weatherState.SaveWeather(weather)
+		if err != nil {
+			zap.L().Error("failed to save weather", zap.Error(err))
 		}
 	}
 

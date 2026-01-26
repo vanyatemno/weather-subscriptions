@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -44,6 +45,8 @@ func main() {
 		panic(fmt.Sprintf("failed to read config: %v", err))
 	}
 
+	zap.L().Info("loaded config", zap.Any("config", cfg))
+
 	mailerService := mail.NewMailerService(cfg)
 
 	database, err := db.Connect(cfg)
@@ -59,6 +62,16 @@ func main() {
 
 	scheduler.StartAsync()
 	go createWebserver(cfg, set, mailerService)
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		<-c
+		zap.L().Info("Gracefully shutting down...")
+		cancel()
+		_ = webApp.Shutdown()
+	}()
 
 	for range appCtx.Done() {
 		_ = webApp.ShutdownWithContext(appCtx)
