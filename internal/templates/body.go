@@ -121,7 +121,7 @@ const weatherEmailTemplate = `<!DOCTYPE html>
             <p>Stay safe and have a great day!</p>
             <p><a href="%s">Follow this link to unsubscribe</a></p>						
         </div>
-    </div>s
+    </div>
 </body>
 </html>`
 

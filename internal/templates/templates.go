@@ -32,8 +32,8 @@ func GetWeatherEmailBody(
 		strconv.FormatFloat(weather.Temperature, 'f', -1, 64),
 		strconv.Itoa(weather.Humidity),
 		weather.Description,
-		fmt.Sprintf(unsubscribeLinkTemplate, frontendURL, code),
 		buildRecommendations(advises),
+		fmt.Sprintf(unsubscribeLinkTemplate, frontendURL, code),
 	)
 }
 
