@@ -45,8 +45,6 @@ func main() {
 		panic(fmt.Sprintf("failed to read config: %v", err))
 	}
 
-	zap.L().Info("loaded config", zap.Any("config", cfg))
-
 	mailerService := mail.NewMailerService(cfg)
 
 	database, err := db.Connect(cfg)

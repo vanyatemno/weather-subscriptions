@@ -1,17 +1,21 @@
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 COPY cmd ./cmd
+COPY docs ./docs
 COPY internal ./internal
 COPY go.mod go.sum *.go ./
 COPY deploy ./deploy
 COPY api ./api
+COPY test ./test
 
-# Toggle CGO based on your app requirement. CGO_ENABLED=1 for enabling CGO
-RUN #CGO_ENABLED=0 go build -ldflags '-s -w -extldflags "-static"' -o /cmd/main.go
-# Use below if using vendor
 RUN go mod download
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/appbin ./cmd/main.go
+
+FROM builder AS tester
+WORKDIR /app
+COPY . .
+ENV DSN=""
 
 FROM alpine:latest
 LABEL MAINTAINER = <vanya04400@gmail.com>

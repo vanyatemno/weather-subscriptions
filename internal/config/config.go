@@ -27,5 +27,5 @@ type Mailer struct {
 }
 
 type OpenAI struct {
-	OpenrouterAPIKey string `mapstructure:"OPENROUTER_API_KEY" json:"OPENROUTER_API_KEY" yaml:"OPENROUTER_API_KEY"`
+	OpenrouterAPIKey string `mapstructure:"OPENROUTER_API_KEY" json:"OPENROUTER_API_KEY" yaml:"OPENROUTER_API_KEY-"`
 }

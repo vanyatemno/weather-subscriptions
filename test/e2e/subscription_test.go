@@ -17,7 +17,7 @@ import (
 	"weather-subscriptions/internal/db/models"
 )
 
-//nolint:gocognit,gocyclo
+//nolint:gocognit,gocycle,gocyclo,cyclop
 func TestSubscriptions(t *testing.T) {
 	webApp, state := newTestApp()
 	app := adaptor.FiberApp(webApp)
@@ -39,154 +39,180 @@ func TestSubscriptions(t *testing.T) {
 	firstEmail := fmt.Sprintf("user-%d@example.com", suffix)
 	secondEmail := fmt.Sprintf("user-%d@example.com", suffix+1)
 
-	request := map[string]string{
-		"email":     firstEmail,
-		"city":      cityName,
-		"frequency": models.DAILY,
-	}
-	response := sendJSONRequest(t, app, http.MethodPost, "/subscribe", request)
-	if response.StatusCode != http.StatusOK {
-		t.Fatalf("expected status 200, got %d", response.StatusCode)
-	}
+	var user *models.User
+	var confirmToken *models.Token
+	var unsubToken *models.Token
+	var subscription *models.Subscription
+	var secondUser *models.User
+	var secondConfirmToken *models.Token
+	var secondUnsubToken *models.Token
 
-	user, err := state.GetUserByEmail(firstEmail)
-	if err != nil {
-		t.Fatalf("expected user to be stored: %v", err)
-	}
-	if user == nil {
-		t.Fatalf("expected user to be created")
-	}
+	t.Run("subscribe creates user and tokens", func(t *testing.T) {
+		request := map[string]string{
+			"email":     firstEmail,
+			"city":      cityName,
+			"frequency": models.DAILY,
+		}
+		response := sendJSONRequest(t, app, http.MethodPost, "/subscribe", request)
+		if response.StatusCode != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", response.StatusCode)
+		}
 
-	confirmToken, err := state.GetTokenByUserIDAndType(user.ID, models.Sub)
-	if err != nil {
-		t.Fatalf("expected confirmation token: %v", err)
-	}
-	if confirmToken == nil {
-		t.Fatalf("expected confirmation token to exist")
-	}
+		var err error
+		user, err = state.GetUserByEmail(firstEmail)
+		if err != nil {
+			t.Fatalf("expected user to be stored: %v", err)
+		}
+		if user == nil {
+			t.Fatalf("expected user to be created")
+		}
 
-	unsubToken, err := state.GetTokenByUserIDAndType(user.ID, models.Unsub)
-	if err != nil {
-		t.Fatalf("expected unsubscribe token: %v", err)
-	}
-	if unsubToken == nil {
-		t.Fatalf("expected unsubscribe token to exist")
-	}
+		confirmToken, err = state.GetTokenByUserIDAndType(user.ID, models.Sub)
+		if err != nil {
+			t.Fatalf("expected confirmation token: %v", err)
+		}
+		if confirmToken == nil {
+			t.Fatalf("expected confirmation token to exist")
+		}
 
-	confirmResponse := sendRequest(app, http.MethodGet, "/confirm/"+confirmToken.Token, nil)
-	if confirmResponse.StatusCode != http.StatusOK {
-		t.Fatalf("expected status 200, got %d", confirmResponse.StatusCode)
-	}
+		unsubToken, err = state.GetTokenByUserIDAndType(user.ID, models.Unsub)
+		if err != nil {
+			t.Fatalf("expected unsubscribe token: %v", err)
+		}
+		if unsubToken == nil {
+			t.Fatalf("expected unsubscribe token to exist")
+		}
+	})
 
-	subscription, err := state.GetSubscription(user.ID)
-	if err != nil {
-		t.Fatalf("expected subscription: %v", err)
-	}
-	if subscription == nil {
-		t.Fatalf("expected subscription to be created")
-	}
-	if subscription.Frequency != request["frequency"] {
-		t.Fatalf("expected frequency %q, got %q", request["frequency"], subscription.Frequency)
-	}
+	t.Run("confirm subscription with valid token", func(t *testing.T) {
+		confirmResponse := sendRequest(app, http.MethodGet, "/confirm/"+confirmToken.Token, nil)
+		if confirmResponse.StatusCode != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", confirmResponse.StatusCode)
+		}
 
-	_, err = state.GetToken(confirmToken.Token)
-	if err == nil {
-		t.Fatalf("expected confirmation token to be removed")
-	}
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		t.Fatalf("unexpected error looking up token: %v", err)
-	}
+		var err error
+		subscription, err = state.GetSubscription(user.ID)
+		if err != nil {
+			t.Fatalf("expected subscription: %v", err)
+		}
+		if subscription == nil {
+			t.Fatalf("expected subscription to be created")
+		}
+		if subscription.Frequency != models.DAILY {
+			t.Fatalf("expected frequency %q, got %q", models.DAILY, subscription.Frequency)
+		}
 
-	invalidConfirmResponse := sendRequest(app, http.MethodGet, "/confirm/invalid", nil)
-	if invalidConfirmResponse.StatusCode != http.StatusNotFound {
-		t.Fatalf("expected status 404, got %d", invalidConfirmResponse.StatusCode)
-	}
+		_, err = state.GetToken(confirmToken.Token)
+		if err == nil {
+			t.Fatalf("expected confirmation token to be removed")
+		}
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			t.Fatalf("unexpected error looking up token: %v", err)
+		}
+	})
 
-	secondRequest := map[string]string{
-		"email":     secondEmail,
-		"city":      cityName,
-		"frequency": models.HOURLY,
-	}
-	secondResponse := sendJSONRequest(t, app, http.MethodPost, "/subscribe", secondRequest)
-	if secondResponse.StatusCode != http.StatusOK {
-		t.Fatalf("expected status 200, got %d", secondResponse.StatusCode)
-	}
+	t.Run("confirm subscription with invalid token", func(t *testing.T) {
+		invalidConfirmResponse := sendRequest(app, http.MethodGet, "/confirm/invalid", nil)
+		if invalidConfirmResponse.StatusCode != http.StatusNotFound {
+			t.Fatalf("expected status 404, got %d", invalidConfirmResponse.StatusCode)
+		}
+	})
 
-	secondUser, err := state.GetUserByEmail(secondEmail)
-	if err != nil {
-		t.Fatalf("expected second user to be stored: %v", err)
-	}
+	t.Run("confirm subscription with expired token", func(t *testing.T) {
+		secondRequest := map[string]string{
+			"email":     secondEmail,
+			"city":      cityName,
+			"frequency": models.HOURLY,
+		}
+		secondResponse := sendJSONRequest(t, app, http.MethodPost, "/subscribe", secondRequest)
+		if secondResponse.StatusCode != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", secondResponse.StatusCode)
+		}
 
-	secondConfirmToken, err := state.GetTokenByUserIDAndType(secondUser.ID, models.Sub)
-	if err != nil {
-		t.Fatalf("expected second confirmation token: %v", err)
-	}
-	secondConfirmToken.ExpiryAt = time.Now().Add(-time.Hour)
-	secondConfirmToken.CreatedAt = time.Now().Add(-time.Hour)
-	secondConfirmToken.UpdatedAt = time.Now().Add(-time.Hour)
-	if err := state.SaveToken(secondConfirmToken); err != nil {
-		t.Fatalf("expected expired token to be saved: %v", err)
-	}
+		var err error
+		secondUser, err = state.GetUserByEmail(secondEmail)
+		if err != nil {
+			t.Fatalf("expected second user to be stored: %v", err)
+		}
 
-	expiredConfirmResponse := sendRequest(app, http.MethodGet, "/confirm/"+secondConfirmToken.Token, nil)
-	if expiredConfirmResponse.StatusCode != http.StatusNotFound {
-		t.Fatalf("expected status 400, got %d", expiredConfirmResponse.StatusCode)
-	}
+		secondConfirmToken, err = state.GetTokenByUserIDAndType(secondUser.ID, models.Sub)
+		if err != nil {
+			t.Fatalf("expected second confirmation token: %v", err)
+		}
+		secondConfirmToken.ExpiryAt = time.Now().Add(-time.Hour)
+		secondConfirmToken.CreatedAt = time.Now().Add(-time.Hour)
+		secondConfirmToken.UpdatedAt = time.Now().Add(-time.Hour)
+		if err := state.SaveToken(secondConfirmToken); err != nil {
+			t.Fatalf("expected expired token to be saved: %v", err)
+		}
 
-	unsubscribeResponse := sendRequest(app, http.MethodGet, "/unsubscribe/"+unsubToken.Token, nil)
-	if unsubscribeResponse.StatusCode != http.StatusOK {
-		t.Fatalf("expected status 200, got %d", unsubscribeResponse.StatusCode)
-	}
+		expiredConfirmResponse := sendRequest(app, http.MethodGet, "/confirm/"+secondConfirmToken.Token, nil)
+		if expiredConfirmResponse.StatusCode != http.StatusNotFound {
+			t.Fatalf("expected status 400, got %d", expiredConfirmResponse.StatusCode)
+		}
+	})
 
-	removedUser, err := state.GetUser(user.ID)
-	if err == nil || removedUser != nil {
-		t.Fatalf("expected user to be removed")
-	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		t.Fatalf("unexpected error looking up user: %v", err)
-	}
+	t.Run("unsubscribe with valid token", func(t *testing.T) {
+		unsubscribeResponse := sendRequest(app, http.MethodGet, "/unsubscribe/"+unsubToken.Token, nil)
+		if unsubscribeResponse.StatusCode != http.StatusOK {
+			t.Fatalf("expected status 200, got %d", unsubscribeResponse.StatusCode)
+		}
 
-	_, err = state.GetSubscription(user.ID)
-	if err == nil {
-		t.Fatalf("expected subscription to be removed")
-	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		t.Fatalf("unexpected error looking up subscription: %v", err)
-	}
+		removedUser, err := state.GetUser(user.ID)
+		if err == nil || removedUser != nil {
+			t.Fatalf("expected user to be removed")
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			t.Fatalf("unexpected error looking up user: %v", err)
+		}
 
-	_, err = state.GetToken(unsubToken.Token)
-	if err == nil {
-		t.Fatalf("expected unsubscribe token to be removed")
-	}
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		t.Fatalf("unexpected error looking up unsubscribe token: %v", err)
-	}
+		_, err = state.GetSubscription(user.ID)
+		if err == nil {
+			t.Fatalf("expected subscription to be removed")
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			t.Fatalf("unexpected error looking up subscription: %v", err)
+		}
 
-	invalidUnsubResponse := sendRequest(app, http.MethodGet, "/unsubscribe/invalid", nil)
-	if invalidUnsubResponse.StatusCode != http.StatusNotFound {
-		t.Fatalf("expected status 404, got %d", invalidUnsubResponse.StatusCode)
-	}
+		_, err = state.GetToken(unsubToken.Token)
+		if err == nil {
+			t.Fatalf("expected unsubscribe token to be removed")
+		}
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			t.Fatalf("unexpected error looking up unsubscribe token: %v", err)
+		}
+	})
 
-	secondUnsubToken, err := state.GetTokenByUserIDAndType(secondUser.ID, models.Unsub)
-	if err != nil {
-		t.Fatalf("expected second unsubscribe token: %v", err)
-	}
-	secondUnsubToken.ExpiryAt = time.Now().Add(-time.Hour)
-	secondUnsubToken.CreatedAt = time.Now().Add(-time.Hour)
-	secondUnsubToken.UpdatedAt = time.Now().Add(-time.Hour)
-	if err := state.SaveToken(secondUnsubToken); err != nil {
-		t.Fatalf("expected expired unsub token to be saved: %v", err)
-	}
+	t.Run("unsubscribe with invalid token", func(t *testing.T) {
+		invalidUnsubResponse := sendRequest(app, http.MethodGet, "/unsubscribe/invalid", nil)
+		if invalidUnsubResponse.StatusCode != http.StatusNotFound {
+			t.Fatalf("expected status 404, got %d", invalidUnsubResponse.StatusCode)
+		}
+	})
 
-	expiredUnsubResponse := sendRequest(
-		app,
-		http.MethodGet,
-		fmt.Sprintf("/unsubscribe/%s", secondUnsubToken.Token),
-		nil,
-	)
-	if expiredUnsubResponse.StatusCode != http.StatusNotFound {
-		t.Fatalf("expected status 404, got %d", expiredUnsubResponse.StatusCode)
-	}
+	t.Run("unsubscribe with expired token", func(t *testing.T) {
+		var err error
+		secondUnsubToken, err = state.GetTokenByUserIDAndType(secondUser.ID, models.Unsub)
+		if err != nil {
+			t.Fatalf("expected second unsubscribe token: %v", err)
+		}
+		secondUnsubToken.ExpiryAt = time.Now().Add(-time.Hour)
+		secondUnsubToken.CreatedAt = time.Now().Add(-time.Hour)
+		secondUnsubToken.UpdatedAt = time.Now().Add(-time.Hour)
+		if err := state.SaveToken(secondUnsubToken); err != nil {
+			t.Fatalf("expected expired unsub token to be saved: %v", err)
+		}
+
+		expiredUnsubResponse := sendRequest(
+			app,
+			http.MethodGet,
+			fmt.Sprintf("/unsubscribe/%s", secondUnsubToken.Token),
+			nil,
+		)
+		if expiredUnsubResponse.StatusCode != http.StatusNotFound {
+			t.Fatalf("expected status 404, got %d", expiredUnsubResponse.StatusCode)
+		}
+	})
 }
 
 func sendJSONRequest(
